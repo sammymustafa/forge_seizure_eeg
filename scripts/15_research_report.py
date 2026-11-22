@@ -279,6 +279,9 @@ def section_electrode_count() -> list[str]:
         f"{int(ref.n_features)}-feature full montage has more parameters to "
         f"fit than the cross-patient signal supports.",
         "",
+        "![Performance versus electrode count]"
+        "(results/figures/fig9_performance_vs_electrode_count.png)",
+        "",
         "![Performance by electrode set](results/figures/fig2_montage_performance.png)",
         "",
     ]
@@ -305,6 +308,8 @@ def section_placement() -> list[str]:
                  {"mean_delta": 3, "ci_lo": 3, "ci_hi": 3}),
         "",
     ]
+    lines += ["![Paired performance loss]"
+              "(results/figures/fig10_paired_performance_loss.png)", ""]
     worse = [r.montage for r in d6.itertuples() if r.ci_hi < 0]
     same = [r.montage for r in d6.itertuples() if r.ci_lo <= 0 <= r.ci_hi]
     if worse:
@@ -848,18 +853,43 @@ def main() -> None:
         "All CSVs are in `results/tables/`; figures in `results/figures/`. "
         "Harmonised event tables follow `seizure_eeg.schema`.",
         "",
-        "| Figure | Content | Dataset |",
+        "**Primary figures**",
+        "",
+        "| # | File | Content | Dataset |",
+        "|---|---|---|---|",
+        "| 1 | `fig9_performance_vs_electrode_count.png` | performance versus "
+        "electrode count | CHB-MIT (scalp proxy) |",
+        "| 2 | `fig2_montage_performance.png` | full scalp vs glasses-like vs "
+        "temporal layouts | CHB-MIT |",
+        "| 3 | `fig4_placement_control.png` | all 153 two-channel subsets as a "
+        "placement control | CHB-MIT |",
+        "| 4 | `fig10_paired_performance_loss.png` | paired performance-loss "
+        "distribution and its uncertainty | CHB-MIT |",
+        "",
+        "**Secondary figures**",
+        "",
+        "| # | File | Content | Dataset |",
+        "|---|---|---|---|",
+        "| 5 | `fig5_seizeit2_subtype.png` | sensitivity and latency by "
+        "seizure subtype | SeizeIT2 (real wearable) |",
+        "| 6 | `fig6_seizeit2_onset_location.png` | sensitivity by onset lobe "
+        "and hemisphere | SeizeIT2 |",
+        "| 7 | `fig5_seizeit2_subtype.png` (panel B), "
+        "`fig7_seizeit2_proximity_vigilance.png` | latency by subtype; onset "
+        "side versus device side | SeizeIT2 |",
+        "| 8 | — | electrode layout × seizure type | **planned, needs TUH** |",
+        "",
+        "**Supporting figures**",
+        "",
+        "| File | Content | Dataset |",
         "|---|---|---|",
-        "| 1 | One seizure through each electrode set | CHB-MIT (scalp proxy) |",
-        "| 2 | AUPRC, sensitivity, latency by electrode set | CHB-MIT |",
-        "| 3 | Sensitivity versus achieved false-alarm rate | CHB-MIT |",
-        "| 4 | All 153 two-channel subsets as a placement control | CHB-MIT |",
-        "| 5 | Per-patient spread | CHB-MIT |",
-        "| 5b | Sensitivity and latency by seizure subtype | SeizeIT2 (real wearable) |",
-        "| 6 | Sensitivity by onset lobe and hemisphere | SeizeIT2 |",
-        "| 7 | Onset side versus device side; vigilance | SeizeIT2 |",
-        "| 8 | Annotation inventory | SeizeIT2 |",
-        "| — | Electrode layout × seizure type | **planned, needs TUH** |",
+        "| `fig1_exploratory_montages.png` | one seizure through each "
+        "electrode set | CHB-MIT |",
+        "| `fig3_sensitivity_vs_false_alarms.png` | sensitivity versus "
+        "achieved false-alarm rate | CHB-MIT |",
+        "| `fig5_per_patient.png` | per-patient spread | CHB-MIT |",
+        "| `fig8_seizeit2_annotation_inventory.png` | annotation inventory | "
+        "SeizeIT2 |",
         "",
         "### References",
         "",

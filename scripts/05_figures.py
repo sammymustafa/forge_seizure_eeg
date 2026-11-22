@@ -18,8 +18,8 @@ import pandas as pd
 
 from seizure_eeg.benchmark import bootstrap_ci
 from seizure_eeg.config import (DATA_ROOT, FEATURES_DIR, FEATURES_PER_CHANNEL,
-                                FIGURES_DIR, MONTAGE_LABELS, MONTAGE_ORDER,
-                                MONTAGES, TABLES_DIR)
+                                FIGURES_DIR, MONTAGE_CONTACTS, MONTAGE_LABELS,
+                                MONTAGE_ORDER, MONTAGES, TABLES_DIR)
 from seizure_eeg.dataset import CH_INDEX
 from seizure_eeg.plotting import (GRID, INK, INK_2, INK_MUTED, MONTAGE_COLOR,
                                   SEIZURE_SHADE, SERIES, despine, use_style)
@@ -287,7 +287,121 @@ def fig_results() -> None:
     despine(ax)
     fig.savefig(FIGURES_DIR / "fig5_per_patient.png")
     plt.close(fig)
+    fig_electrode_count()
+    fig_paired_loss()
     print("wrote figures to", FIGURES_DIR)
+
+
+def fig_electrode_count() -> None:
+    """Primary figure: performance against physical electrode count.
+
+    Counts are drawn as ordered groups rather than on a numeric axis: several
+    configurations share a contact count and would otherwise be plotted on top
+    of each other, and the three counts (2, 4, 19) are far from evenly spaced.
+    """
+    folds = pd.read_csv(TABLES_DIR / "cv_folds_main.csv")
+    patients = pd.read_csv(TABLES_DIR / "cv_patients_main.csv")
+    order = [m for m in MONTAGE_ORDER if m in set(folds.montage)]
+    counts = sorted({len(MONTAGE_CONTACTS[m]) for m in order})
+    chans = {c: sorted({len(MONTAGES[m]) for m in order
+                        if len(MONTAGE_CONTACTS[m]) == c})
+             for c in counts}
+
+    use_style()
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5.0),
+                             gridspec_kw={"wspace": 0.22})
+    for ax, metric, label, title in [
+            (axes[0], "auprc", "AUPRC", "A   AUPRC"),
+            (axes[1], "event_sensitivity", "Seizure sensitivity",
+             "B   Seizure sensitivity at ≤6 FA/h")]:
+        stats = _agg(patients, metric, 6.0)
+        group_means = []
+        for gi, count in enumerate(counts):
+            members = [m for m in order
+                       if len(MONTAGE_CONTACTS[m]) == count and m in stats.index]
+            width = 0.52
+            offs = (np.linspace(-width / 2, width / 2, len(members))
+                    if len(members) > 1 else np.array([0.0]))
+            vals = []
+            for off, mont in zip(offs, members):
+                r = stats.loc[mont]
+                x = gi + off
+                ax.plot([x, x], [r["lo"], r["hi"]], color=INK_2, lw=1.5,
+                        zorder=3, solid_capstyle="butt")
+                ax.scatter([x], [r["mean"]], s=86, color=MONTAGE_COLOR[mont],
+                           zorder=4, edgecolor="white", linewidth=1.3,
+                           label=MONTAGE_LABELS[mont])
+                vals.append(r["mean"])
+            group_means.append(np.mean(vals) if vals else np.nan)
+        ax.plot(np.arange(len(counts)), group_means, color=INK_MUTED, lw=1.5,
+                ls="--", zorder=2)
+        ax.set_xticks(np.arange(len(counts)))
+        ax.set_xticklabels(
+            [f"{c} contacts\n{'/'.join(str(k) for k in chans[c])} "
+             f"bipolar channel{'s' if max(chans[c]) > 1 else ''}"
+             for c in counts], fontsize=9)
+        ax.tick_params(axis="x", length=0)
+        ax.set_xlim(-0.6, len(counts) - 0.4)
+        ax.set(xlabel="", ylabel=label)
+        ax.grid(axis="x", visible=False)
+        ax.set_title(title, loc="left", pad=10)
+        despine(ax)
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc="lower center", ncol=3, frameon=False,
+               fontsize=8.5, bbox_to_anchor=(0.5, -0.10))
+    fig.suptitle("Performance against electrode count — CHB-MIT scalp "
+                 "proxies, 23 patients, identical windows\n"
+                 "each point is one configuration (mean over held-out "
+                 "patients, 95% bootstrap CI); the dashed line joins the mean "
+                 "at each count",
+                 fontsize=11, fontweight="bold", x=0.008, ha="left", y=1.06)
+    fig.savefig(FIGURES_DIR / "fig9_performance_vs_electrode_count.png")
+    plt.close(fig)
+
+
+def fig_paired_loss() -> None:
+    """Primary figure: the paired performance-loss distribution."""
+    patients = pd.read_csv(TABLES_DIR / "cv_patients_main.csv")
+    d = patients[patients.target_fa_per_h == 6.0]
+    piv = d.groupby(["montage", "patient_id"]).auprc.mean().unstack(0)
+    if "full_18_bipolar" not in piv.columns:
+        return
+    order = [m for m in MONTAGE_ORDER
+             if m in piv.columns and m != "full_18_bipolar"]
+    use_style()
+    fig, ax = plt.subplots(figsize=(11, 4.8))
+    rng = np.random.default_rng(0)
+    ypos = np.arange(len(order))[::-1]
+    for y, mont in zip(ypos, order):
+        delta = (piv[mont] - piv["full_18_bipolar"]).dropna()
+        jitter = rng.uniform(-0.14, 0.14, len(delta))
+        ax.scatter(delta, y - 0.10 + jitter, s=26, color=MONTAGE_COLOR[mont],
+                   alpha=0.55, zorder=3, edgecolor="white", linewidth=0.6)
+        lo, hi = bootstrap_ci(delta.to_numpy())
+        ax.plot([lo, hi], [y + 0.26, y + 0.26], color=INK, lw=2.4, zorder=5,
+                solid_capstyle="round")
+        ax.scatter([delta.mean()], [y + 0.26], s=60, color=INK, zorder=6,
+                   marker="D", edgecolor="white", linewidth=1)
+        sig = "" if lo <= 0 <= hi else "  ✱"
+        ax.text(max(hi, 0.012) + 0.012, y + 0.26, f"{delta.mean():+.3f} "
+                f"[{lo:+.3f}, {hi:+.3f}]{sig}", va="center", fontsize=8.5,
+                color=INK, fontweight="bold")
+    ax.axvline(0, color=INK_2, lw=1.4, zorder=2)
+    ax.set_yticks(ypos)
+    ax.set_yticklabels([MONTAGE_LABELS[m] for m in order], fontsize=9)
+    ax.tick_params(axis="y", length=0)
+    ax.set_xlabel("Per-patient AUPRC difference from the full 18-channel "
+                  "montage  (negative = worse)")
+    ax.set_xlim(piv[order].sub(piv["full_18_bipolar"], axis=0).min().min() - 0.05,
+                0.42)
+    ax.grid(axis="y", visible=False)
+    ax.set_title("Paired performance loss, with its uncertainty\n"
+                 "one dot per held-out patient; diamond and bar are the mean "
+                 "and its 95% patient bootstrap CI; ✱ marks an interval "
+                 "excluding zero", loc="left", pad=10)
+    despine(ax)
+    fig.savefig(FIGURES_DIR / "fig10_paired_performance_loss.png")
+    plt.close(fig)
 
 
 def main() -> None:

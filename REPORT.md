@@ -88,6 +88,8 @@ For scale, the ictal prevalence is 0.0038, so the full montage's AUPRC of 0.209 
 
 Performance does **not** fall monotonically with electrode count. The 19-contact montage reaches AUPRC 0.209, but the best 4-contact and 2-contact sets are within the bootstrap interval of it (§6). With a linear model and patient-disjoint folds, the 252-feature full montage has more parameters to fit than the cross-patient signal supports.
 
+![Performance versus electrode count](results/figures/fig9_performance_vs_electrode_count.png)
+
 ![Performance by electrode set](results/figures/fig2_montage_performance.png)
 
 ## 4. Electrode-placement analysis (CHB-MIT)
@@ -102,6 +104,8 @@ All of these configurations use the same number of contacts, so any difference i
 | Glasses-like (4 contacts, 2 ch) | 23 | -0.076 | -0.154 | -0.002 | 9 | 14 |
 | Right temporal (2 contacts, 1 ch) | 23 | -0.09 | -0.172 | -0.015 | 7 | 16 |
 
+
+![Paired performance loss](results/figures/fig10_paired_performance_loss.png)
 
 Configurations whose interval excludes zero (measurably worse than full scalp): Glasses-like (4 contacts, 2 ch), Right temporal (2 contacts, 1 ch).
 
@@ -364,18 +368,32 @@ TUSZ uses the older 10-20 labels T3/T4/T5/T6 where CHB-MIT uses T7/T8/P7/P8; `TU
 
 All CSVs are in `results/tables/`; figures in `results/figures/`. Harmonised event tables follow `seizure_eeg.schema`.
 
-| Figure | Content | Dataset |
+**Primary figures**
+
+| # | File | Content | Dataset |
+|---|---|---|---|
+| 1 | `fig9_performance_vs_electrode_count.png` | performance versus electrode count | CHB-MIT (scalp proxy) |
+| 2 | `fig2_montage_performance.png` | full scalp vs glasses-like vs temporal layouts | CHB-MIT |
+| 3 | `fig4_placement_control.png` | all 153 two-channel subsets as a placement control | CHB-MIT |
+| 4 | `fig10_paired_performance_loss.png` | paired performance-loss distribution and its uncertainty | CHB-MIT |
+
+**Secondary figures**
+
+| # | File | Content | Dataset |
+|---|---|---|---|
+| 5 | `fig5_seizeit2_subtype.png` | sensitivity and latency by seizure subtype | SeizeIT2 (real wearable) |
+| 6 | `fig6_seizeit2_onset_location.png` | sensitivity by onset lobe and hemisphere | SeizeIT2 |
+| 7 | `fig5_seizeit2_subtype.png` (panel B), `fig7_seizeit2_proximity_vigilance.png` | latency by subtype; onset side versus device side | SeizeIT2 |
+| 8 | — | electrode layout × seizure type | **planned, needs TUH** |
+
+**Supporting figures**
+
+| File | Content | Dataset |
 |---|---|---|
-| 1 | One seizure through each electrode set | CHB-MIT (scalp proxy) |
-| 2 | AUPRC, sensitivity, latency by electrode set | CHB-MIT |
-| 3 | Sensitivity versus achieved false-alarm rate | CHB-MIT |
-| 4 | All 153 two-channel subsets as a placement control | CHB-MIT |
-| 5 | Per-patient spread | CHB-MIT |
-| 5b | Sensitivity and latency by seizure subtype | SeizeIT2 (real wearable) |
-| 6 | Sensitivity by onset lobe and hemisphere | SeizeIT2 |
-| 7 | Onset side versus device side; vigilance | SeizeIT2 |
-| 8 | Annotation inventory | SeizeIT2 |
-| — | Electrode layout × seizure type | **planned, needs TUH** |
+| `fig1_exploratory_montages.png` | one seizure through each electrode set | CHB-MIT |
+| `fig3_sensitivity_vs_false_alarms.png` | sensitivity versus achieved false-alarm rate | CHB-MIT |
+| `fig5_per_patient.png` | per-patient spread | CHB-MIT |
+| `fig8_seizeit2_annotation_inventory.png` | annotation inventory | SeizeIT2 |
 
 ### References
 

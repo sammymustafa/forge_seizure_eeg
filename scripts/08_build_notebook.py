@@ -125,7 +125,8 @@ patients = pd.read_csv(TABLES_DIR / "cv_patients_main.csv")
 summary = report.summary_table(patients, folds, target=6.0)
 display(Markdown(report.to_markdown(summary, 6.0)))"""),
 
-    CODE("""display(Image(filename=str(FIGURES_DIR / "fig2_montage_performance.png")))"""),
+    CODE("""display(Image(filename=str(FIGURES_DIR / "fig9_performance_vs_electrode_count.png")))
+display(Image(filename=str(FIGURES_DIR / "fig2_montage_performance.png")))"""),
 
     MD("""### Does the trade-off hold at other alarm budgets?"""),
 
@@ -138,7 +139,11 @@ one configuration against another."""),
 
     CODE("""d = report.paired_delta(patients, "auprc", 6.0)
 display(d[["montage", "n_patients", "mean_delta", "ci_lo", "ci_hi",
-           "n_better", "n_worse"]])"""),
+           "n_better", "n_worse"]])
+display(Image(filename=str(FIGURES_DIR / "fig10_paired_performance_loss.png")))
+display(Markdown(
+    "An interval that includes zero is **not** evidence of equivalence - it "
+    "means this cohort cannot resolve a difference of that size."))"""),
 
     MD("""## 6. Placement control
 
