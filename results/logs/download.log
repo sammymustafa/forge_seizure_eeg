@@ -1,0 +1,74 @@
+676 EDF files queued
+  25/676 ok, 0 failed, 63.0 GB free
+  50/676 ok, 0 failed, 62.0 GB free
+  75/676 ok, 0 failed, 61.0 GB free
+  100/676 ok, 0 failed, 59.9 GB free
+  125/676 ok, 0 failed, 57.6 GB free
+  150/676 ok, 0 failed, 53.4 GB free
+  175/676 ok, 0 failed, 51.6 GB free
+  retry 1/4 for chb05/chb05_26.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb05/chb05_26.edf'); sleeping 2s
+  200/676 ok, 0 failed, 49.8 GB free
+  retry 1/4 for chb07/chb07_10.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb07/chb07_10.edf'); sleeping 2s
+  retry 1/4 for chb07/chb07_12.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb07/chb07_12.edf'); sleeping 2s
+  225/676 ok, 0 failed, 46.2 GB free
+  retry 1/4 for chb07/chb07_19.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb07/chb07_19.edf'); sleeping 2s
+  retry 1/4 for chb08/chb08_13.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb08/chb08_13.edf'); sleeping 2s
+  retry 1/4 for chb08/chb08_21.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb08/chb08_21.edf'); sleeping 2s
+  250/676 ok, 0 failed, 44.3 GB free
+  retry 1/4 for chb09/chb09_08.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb09/chb09_08.edf'); sleeping 2s
+  retry 2/4 for chb09/chb09_08.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb09/chb09_08.edf'); sleeping 4s
+  retry 1/4 for chb09/chb09_13.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb09/chb09_13.edf'); sleeping 2s
+  retry 1/4 for chb09/chb09_15.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb09/chb09_15.edf'); sleeping 2s
+  retry 1/4 for chb09/chb09_17.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb09/chb09_17.edf'); sleeping 2s
+  retry 1/4 for chb10/chb10_02.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb10/chb10_02.edf'); sleeping 2s
+  275/676 ok, 0 failed, 40.9 GB free
+  retry 1/4 for chb10/chb10_14.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb10/chb10_14.edf'); sleeping 2s
+  retry 1/4 for chb11/chb11_02.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb11/chb11_02.edf'); sleeping 2s
+  300/676 ok, 0 failed, 39.0 GB free
+  325/676 ok, 0 failed, 37.6 GB free
+  retry 1/4 for chb12/chb12_10.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb12/chb12_10.edf'); sleeping 2s
+  350/676 ok, 0 failed, 36.4 GB free
+  retry 1/4 for chb13/chb13_02.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb13/chb13_02.edf'); sleeping 2s
+  375/676 ok, 0 failed, 35.3 GB free
+  retry 1/4 for chb13/chb13_56.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb13/chb13_56.edf'); sleeping 2s
+  400/676 ok, 0 failed, 34.0 GB free
+  retry 1/4 for chb14/chb14_30.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb14/chb14_30.edf'); sleeping 2s
+  425/676 ok, 0 failed, 32.5 GB free
+  retry 1/4 for chb15/chb15_20.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb15/chb15_20.edf'); sleeping 2s
+  retry 1/4 for chb15/chb15_45.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb15/chb15_45.edf'); sleeping 2s
+  retry 2/4 for chb15/chb15_45.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb15/chb15_45.edf'); sleeping 4s
+  retry 1/4 for chb15/chb15_51.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb15/chb15_51.edf'); sleeping 2s
+  450/676 ok, 0 failed, 30.8 GB free
+  retry 1/4 for chb16/chb16_04.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb16/chb16_04.edf'); sleeping 2s
+  retry 1/4 for chb16/chb16_11.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb16/chb16_11.edf'); sleeping 2s
+  retry 1/4 for chb16/chb16_13.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb16/chb16_13.edf'); sleeping 2s
+  retry 1/4 for chb16/chb16_17.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb16/chb16_17.edf'); sleeping 2s
+  retry 2/4 for chb16/chb16_13.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb16/chb16_13.edf'); sleeping 4s
+  475/676 ok, 0 failed, 29.5 GB free
+  retry 1/4 for chb17/chb17b_67.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb17/chb17b_67.edf'); sleeping 2s
+  retry 1/4 for chb17/chb17b_68.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb17/chb17b_68.edf'); sleeping 2s
+  retry 1/4 for chb17/chb17b_69.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb17/chb17b_69.edf'); sleeping 2s
+  500/676 ok, 0 failed, 28.1 GB free
+  retry 1/4 for chb18/chb18_16.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb18/chb18_16.edf'); sleeping 2s
+  retry 2/4 for chb18/chb18_16.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb18/chb18_16.edf'); sleeping 4s
+  525/676 ok, 0 failed, 28.4 GB free
+  retry 1/4 for chb19/chb19_06.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb19/chb19_06.edf'); sleeping 2s
+  retry 1/4 for chb19/chb19_15.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb19/chb19_15.edf'); sleeping 2s
+  550/676 ok, 0 failed, 27.1 GB free
+  retry 1/4 for chb20/chb20_11.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb20/chb20_11.edf'); sleeping 2s
+  retry 1/4 for chb20/chb20_15.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb20/chb20_15.edf'); sleeping 2s
+  575/676 ok, 0 failed, 25.8 GB free
+  retry 1/4 for chb20/chb20_59.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb20/chb20_59.edf'); sleeping 2s
+  retry 1/4 for chb21/chb21_04.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb21/chb21_04.edf'); sleeping 2s
+  retry 1/4 for chb21/chb21_03.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb21/chb21_03.edf'); sleeping 2s
+  600/676 ok, 0 failed, 24.7 GB free
+  retry 1/4 for chb21/chb21_16.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb21/chb21_16.edf'); sleeping 2s
+  retry 1/4 for chb21/chb21_33.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb21/chb21_33.edf'); sleeping 2s
+  625/676 ok, 0 failed, 24.9 GB free
+  retry 1/4 for chb22/chb22_10.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb22/chb22_10.edf'); sleeping 2s
+  retry 1/4 for chb22/chb22_15.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb22/chb22_15.edf'); sleeping 2s
+  retry 1/4 for chb22/chb22_18.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb22/chb22_18.edf'); sleeping 2s
+  retry 1/4 for chb22/chb22_24.edf after HTTPError('502 Server Error: Bad Gateway for url: https://physionet.org/files/chbmit/1.0.0/chb22/chb22_24.edf'); sleeping 2s
+  650/676 ok, 0 failed, 23.7 GB free
+  675/676 ok, 0 failed, 21.8 GB free
+done=676 failed=0 on-disk=42.3 GB

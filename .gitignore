@@ -1,0 +1,11 @@
+# Raw recordings are large; re-fetch them with scripts/02_download.py
+data/chbmit/**/*.edf
+data/chbmit/**/*.part
+
+# Feature tensors are regenerable (scripts/03_extract_features.py)
+results/features/*.npz
+results/features/*_meta.csv.gz
+
+__pycache__/
+*.pyc
+.ipynb_checkpoints/

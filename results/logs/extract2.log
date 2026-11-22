@@ -1,0 +1,5 @@
+featurising 21 cases with 4 workers
+  chb05: ok files=39 windows=14041 ictal=62
+  chb08: ok files=20 windows=7202 ictal=97
+  chb06: ok files=18 windows=24023 ictal=24
+  chb07: ok files=19 windows=24138 ictal=36
