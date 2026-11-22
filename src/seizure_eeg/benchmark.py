@@ -15,7 +15,7 @@ from sklearn.preprocessing import StandardScaler
 
 from .config import FEATURES_DIR, FEATURES_PER_CHANNEL, MONTAGES
 from .dataset import CH_INDEX, UNION_CHANNELS
-from .evaluation import score_events, threshold_for_target_fa
+from .evaluation import EventScorer
 from .summary import parse_summary
 
 _EPS = 1e-9
@@ -193,6 +193,7 @@ def run_montage_cv(store: WindowStore, montage: str, mask: np.ndarray, *,
 
         meta_te = meta.iloc[te].reset_index(drop=True)
         seiz_te = seiz[seiz.edf_file.isin(set(meta_te.edf_file))]
+        scorer_te = EventScorer(meta_te, seiz_te, min_consecutive)
 
         # out-of-fold scores on the TRAINING patients -> thresholds
         s_tr = np.empty(len(tr))
@@ -210,6 +211,16 @@ def run_montage_cv(store: WindowStore, montage: str, mask: np.ndarray, *,
                 s_tr[ite] = m2.predict_proba(X[tr][ite])[:, 1]
         meta_tr = meta.iloc[tr].reset_index(drop=True)
         seiz_tr = seiz[seiz.edf_file.isin(set(meta_tr.edf_file))]
+        scorer_tr = EventScorer(meta_tr, seiz_tr, min_consecutive)
+
+        patient_scorers = {}
+        if per_patient:
+            for pid in sorted(set(groups[te])):
+                sel = meta_te.patient_id.to_numpy() == pid
+                m_p = meta_te[sel].reset_index(drop=True)
+                sz_p = seiz_te[seiz_te.edf_file.isin(set(m_p.edf_file))]
+                patient_scorers[pid] = (sel, EventScorer(m_p, sz_p,
+                                                         min_consecutive))
 
         base = {
             "montage": montage, "fold": fold, "model": model_kind,
@@ -228,9 +239,8 @@ def run_montage_cv(store: WindowStore, montage: str, mask: np.ndarray, *,
                                                  zero_division=0))
 
         for target in target_fa_per_h:
-            thr = threshold_for_target_fa(meta_tr, s_tr, seiz_tr, target,
-                                          min_consecutive)
-            ev = score_events(meta_te, s_te, thr, seiz_te, min_consecutive)
+            thr = scorer_tr.threshold_for_target_fa(s_tr, target)
+            ev = scorer_te.score(s_te, thr)
             pred = (s_te >= thr).astype(int)
             row = dict(base)
             row.update({
@@ -246,26 +256,20 @@ def run_montage_cv(store: WindowStore, montage: str, mask: np.ndarray, *,
             })
             rows.append(row)
 
-            if per_patient:
-                for pid in sorted(set(groups[te])):
-                    sel = meta_te.patient_id.to_numpy() == pid
-                    m_p = meta_te[sel].reset_index(drop=True)
-                    s_p = s_te[sel]
-                    y_p = y[te][sel]
-                    sz_p = seiz_te[seiz_te.edf_file.isin(set(m_p.edf_file))]
-                    ev_p = score_events(m_p, s_p, thr, sz_p, min_consecutive)
-                    prows.append({
-                        "montage": montage, "fold": fold, "patient_id": pid,
-                        "model": model_kind, "normalise": normalise,
-                        "target_fa_per_h": target, "threshold": thr,
-                        "n_windows": int(sel.sum()),
-                        "n_ictal_windows": int(y_p.sum()),
-                        "auprc": (float(average_precision_score(y_p, s_p))
-                                  if len(np.unique(y_p)) > 1 else np.nan),
-                        "auroc": (float(roc_auc_score(y_p, s_p))
-                                  if len(np.unique(y_p)) > 1 else np.nan),
-                        **ev_p,
-                    })
+            for pid, (sel, scorer_p) in patient_scorers.items():
+                s_p, y_p = s_te[sel], y[te][sel]
+                prows.append({
+                    "montage": montage, "fold": fold, "patient_id": pid,
+                    "model": model_kind, "normalise": normalise,
+                    "target_fa_per_h": target, "threshold": thr,
+                    "n_windows": int(sel.sum()),
+                    "n_ictal_windows": int(y_p.sum()),
+                    "auprc": (float(average_precision_score(y_p, s_p))
+                              if len(np.unique(y_p)) > 1 else np.nan),
+                    "auroc": (float(roc_auc_score(y_p, s_p))
+                              if len(np.unique(y_p)) > 1 else np.nan),
+                    **scorer_p.score(s_p, thr),
+                })
     return pd.DataFrame(rows), pd.DataFrame(prows)
 
 

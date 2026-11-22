@@ -28,6 +28,8 @@ UNION_CHANNELS: list[str] = sorted({ch for chans in MONTAGES.values() for ch in 
 CH_INDEX = {ch: i for i, ch in enumerate(UNION_CHANNELS)}
 
 _DUP_SUFFIX = re.compile(r"-\d+$")
+#: Common-reference labels seen in CHB-MIT (and in TUH-style referential files).
+_REF_LABEL = re.compile(r"^(?P<electrode>[A-Z0-9]+)-(?:CS2|REF|LE|AVG)$")
 
 
 def canonical_channel_map(ch_names: list[str]) -> dict[str, str]:
@@ -38,11 +40,47 @@ def canonical_channel_map(ch_names: list[str]) -> dict[str, str]:
     """
     out: dict[str, str] = {}
     for name in ch_names:
-        stripped = name.strip()
-        if stripped in {"", "-"}:
+        canon = _DUP_SUFFIX.sub("", name.strip().upper())
+        # CHB-MIT pads its montage with placeholder channels named "-" / "--0";
+        # a real derivation is "A-B" with non-empty electrode names on both sides.
+        a, sep, b = canon.partition("-")
+        if not sep or not a or not b:
             continue
-        canon = _DUP_SUFFIX.sub("", stripped.upper())
         out.setdefault(canon, name)
+    return out
+
+
+#: Electrodes any montage could need, used to recognise a bare-label
+#: referential recording (channels named "F7", "T7", ... with no reference).
+_ELECTRODES = {e for chans in MONTAGES.values() for ch in chans
+               for e in ch.split("-")}
+#: Known label typos in the CHB-MIT EDF headers.
+_LABEL_FIXES = {"01": "O1", "02": "O2"}
+
+
+def referential_map(ch_names: list[str]) -> dict[str, str]:
+    """Electrode -> EDF label for a common-reference recording.
+
+    A few CHB-MIT recordings were stored referentially rather than as bipolar
+    pairs: ``chb12_27`` against an explicit ``CS2`` reference, ``chb12_28/29``
+    with bare electrode labels. Any bipolar derivation ``A-B`` can be
+    reconstructed exactly as ``(A-ref) - (B-ref)`` — whatever the reference is,
+    it cancels — so those recordings need not be discarded. The same applies to
+    referential files in other corpora (e.g. TUH).
+
+    Returns an empty mapping for an ordinary bipolar recording.
+    """
+    out: dict[str, str] = {}
+    for name in ch_names:
+        label = _DUP_SUFFIX.sub("", name.strip().upper())
+        m = _REF_LABEL.match(label)
+        if m:
+            electrode = m.group("electrode")
+        else:
+            electrode = _LABEL_FIXES.get(label, label)
+            if electrode not in _ELECTRODES:
+                continue
+        out.setdefault(electrode, name)
     return out
 
 
@@ -72,15 +110,39 @@ def extract_recording(edf_path: str | Path,
         raise ValueError(f"{edf_path.name}: shorter than one window")
 
     present = canonical_channel_map(raw.ch_names)
-    available = [ch for ch in UNION_CHANNELS if ch in present]
-    picks = [raw.ch_names.index(present[ch]) for ch in available]
+    direct = [ch for ch in UNION_CHANNELS if ch in present]
 
-    data = raw.get_data(picks=picks, start=0, stop=n_win * n_samp_win)
+    # Reconstruct any missing derivation from a common-reference recording.
+    ref = referential_map(raw.ch_names)
+    derived: list[tuple[str, str, str]] = []
+    if ref:
+        for ch in UNION_CHANNELS:
+            if ch in present:
+                continue
+            a, _, b = ch.partition("-")
+            if a in ref and b in ref:
+                derived.append((ch, a, b))
+
+    if not direct and not derived:
+        raw.close()
+        raise ValueError(f"{edf_path.name}: no usable derivations")
+
+    ref_used = sorted({e for _, a, b in derived for e in (a, b)})
+    labels = [present[ch] for ch in direct] + [ref[e] for e in ref_used]
+    picks = [raw.ch_names.index(lbl) for lbl in labels]
+    block = raw.get_data(picks=picks, start=0, stop=n_win * n_samp_win)
     raw.close()
 
-    # A few CHB-MIT recordings contain NaN/Inf samples; filtering would smear
-    # them across the whole recording, so neutralise them first and flag the
-    # affected windows through the quality mask below.
+    ref_pos = {e: len(direct) + k for k, e in enumerate(ref_used)}
+    if derived:
+        extra = np.stack([block[ref_pos[a]] - block[ref_pos[b]]
+                          for _, a, b in derived])
+        data = np.concatenate([block[:len(direct)], extra], axis=0)
+    else:
+        data = block[:len(direct)]
+    available = direct + [ch for ch, _, _ in derived]
+    del block
+
     bad_samples = ~np.isfinite(data)
     windows_raw = data.reshape(len(available), n_win, n_samp_win)
     q_avail = window_quality(windows_raw)

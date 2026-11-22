@@ -18,6 +18,10 @@ Conventions (following the spirit of SzCORE, Dan et al. 2024):
   informative, clipped at ``-PRE_TOL`` so an alarm that was already running
   cannot earn arbitrarily large negative credit;
 * any alarm overlapping no seizure tolerance window is one false alarm.
+
+:class:`EventScorer` precomputes the per-recording layout once so that many
+thresholds can be evaluated cheaply (threshold selection does a bisection over
+a quantile grid).
 """
 from __future__ import annotations
 
@@ -29,25 +33,20 @@ POST_TOL = 60.0     # s after annotated offset that still counts as a detection
 MAX_ALARM_S = 60.0  # a sustained alarm is re-issued at this period
 
 
-def _runs(mask: np.ndarray) -> list[tuple[int, int]]:
+def _runs(mask: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """Index ranges [i, j) of consecutive True values."""
-    if mask.size == 0:
-        return []
     padded = np.concatenate(([False], np.asarray(mask, dtype=bool), [False]))
     change = np.diff(padded.astype(np.int8))
-    return list(zip(np.flatnonzero(change == 1).tolist(),
-                    np.flatnonzero(change == -1).tolist()))
+    return np.flatnonzero(change == 1), np.flatnonzero(change == -1)
 
 
 def alarms_for_file(start_s: np.ndarray, stop_s: np.ndarray, above: np.ndarray,
                     min_consecutive: int = 1,
                     max_alarm_s: float = MAX_ALARM_S) -> list[tuple[float, float]]:
-    """Alarm intervals ``(raised_at, ends_at)`` for one recording.
-
-    ``start_s``/``stop_s`` must be sorted and describe contiguous windows.
-    """
+    """Alarm intervals ``(raised_at, ends_at)`` for one recording."""
     out: list[tuple[float, float]] = []
-    for i, j in _runs(above):
+    starts, stops = _runs(above)
+    for i, j in zip(starts, stops):
         if (j - i) < min_consecutive:
             continue
         raised_at = float(stop_s[i + min_consecutive - 1])
@@ -62,94 +61,154 @@ def alarms_for_file(start_s: np.ndarray, stop_s: np.ndarray, above: np.ndarray,
     return out
 
 
+class EventScorer:
+    """Score many thresholds against a fixed set of recordings."""
+
+    def __init__(self, meta: pd.DataFrame, seizure_table: pd.DataFrame,
+                 min_consecutive: int = 1, max_alarm_s: float = MAX_ALARM_S):
+        self.min_consecutive = int(min_consecutive)
+        self.max_alarm_s = float(max_alarm_s)
+        meta = meta.reset_index(drop=True)
+        self.n_rows = len(meta)
+
+        by_file = {f: g.reset_index(drop=True)
+                   for f, g in seizure_table.groupby("edf_file")}
+        self.files: list[dict] = []
+        self.total_s = 0.0
+        self.ictal_s = 0.0
+        self.n_events = 0
+
+        for fname, idx in meta.groupby("edf_file").groups.items():
+            idx = np.asarray(idx)
+            idx = idx[np.argsort(meta.loc[idx, "start_s"].to_numpy())]
+            st = meta.loc[idx, "start_s"].to_numpy(dtype=float)
+            sp = meta.loc[idx, "stop_s"].to_numpy(dtype=float)
+            self.total_s += float((sp - st).sum())
+
+            seiz = by_file.get(fname)
+            tol, onsets = [], []
+            if seiz is not None:
+                for r in seiz.itertuples():
+                    tol.append((r.onset_s - PRE_TOL, r.offset_s + POST_TOL))
+                    onsets.append(float(r.onset_s))
+                    self.ictal_s += float(r.offset_s - r.onset_s)
+            self.n_events += len(tol)
+            self.files.append({"idx": idx, "stop": sp, "tol": tol,
+                               "onsets": onsets})
+        self.interictal_h = max(self.total_s - self.ictal_s, 1.0) / 3600.0
+
+    # ------------------------------------------------------------------
+    def score(self, scores: np.ndarray, threshold: float) -> dict:
+        scores = np.asarray(scores)
+        above_all = scores >= threshold
+        detected: list[bool] = []
+        latencies: list[float] = []
+        n_false = 0
+
+        for f in self.files:
+            sp = f["stop"]
+            above = above_all[f["idx"]]
+            tol = f["tol"]
+            hit = [False] * len(tol)
+            starts, stops = _runs(above)
+            for i, j in zip(starts, stops):
+                if (j - i) < self.min_consecutive:
+                    continue
+                raised = float(sp[i + self.min_consecutive - 1])
+                run_end = float(sp[j - 1])
+                t = raised
+                while True:
+                    end = min(t + self.max_alarm_s, run_end)
+                    matched = False
+                    for k, (w0, w1) in enumerate(tol):
+                        if t <= w1 and end >= w0:
+                            matched = True
+                            if not hit[k]:
+                                hit[k] = True
+                                latencies.append(float(max(t, w0) - f["onsets"][k]))
+                    if not matched:
+                        n_false += 1
+                    if end >= run_end:
+                        break
+                    t = end
+            detected.extend(hit)
+
+        lat = np.asarray(latencies, dtype=float)
+        n_events = len(detected)
+        return {
+            "n_seizure_events": n_events,
+            "n_detected": int(np.sum(detected)),
+            "event_sensitivity": float(np.mean(detected)) if n_events else np.nan,
+            "n_false_alarms": int(n_false),
+            "false_alarms_per_hour": n_false / self.interictal_h,
+            "false_alarms_per_24h": 24.0 * n_false / self.interictal_h,
+            "alarm_duty_cycle": float(above_all.mean()) if above_all.size else np.nan,
+            "recorded_hours": self.total_s / 3600.0,
+            "median_latency_s": float(np.median(lat)) if lat.size else np.nan,
+            "mean_latency_s": float(np.mean(lat)) if lat.size else np.nan,
+        }
+
+    # ------------------------------------------------------------------
+    def threshold_for_target_fa(self, scores: np.ndarray, target_fa_per_h: float,
+                                n_grid: int = 64, refine: int = 5) -> float:
+        """Smallest grid threshold whose false-alarm rate is <= the target.
+
+        The false-alarm rate falls as the threshold rises, but **not strictly**:
+        raising the threshold can punch a hole in one sustained run and split it
+        into two alarms. So this bisects for speed and then rescans a window of
+        ``refine`` grid points either side of the crossing. Whatever it returns
+        satisfies the budget on the data it was given (or is the largest grid
+        value, if nothing does).
+
+        Intended for *training* data only; the chosen value is then applied
+        unchanged to held-out patients.
+        """
+        s = np.asarray(scores)
+        finite = s[np.isfinite(s)]
+        if finite.size == 0:
+            return np.inf
+        # dense near the upper tail, where a rare-event threshold lives
+        qs = 1.0 - np.logspace(np.log10(0.5), np.log10(1e-6), n_grid)
+        grid = np.unique(np.quantile(finite, qs))
+
+        def ok(i: int) -> bool:
+            return self.score(s, float(grid[i]))["false_alarms_per_hour"] <= \
+                target_fa_per_h
+
+        lo, hi = 0, len(grid) - 1
+        crossing = hi
+        while lo <= hi:
+            mid = (lo + hi) // 2
+            if ok(mid):
+                crossing = mid
+                hi = mid - 1
+            else:
+                lo = mid + 1
+
+        best = crossing
+        found = ok(crossing)
+        for i in range(max(0, crossing - refine), min(len(grid), crossing + refine + 1)):
+            if i == crossing:
+                continue
+            if ok(i) and (not found or i < best):
+                best, found = i, True
+        if not found:
+            return float(grid[-1])
+        return float(grid[best])
+
+
+# ---------------------------------------------------------------- shims
 def score_events(meta: pd.DataFrame, scores: np.ndarray, threshold: float,
                  seizure_table: pd.DataFrame, min_consecutive: int = 1,
                  max_alarm_s: float = MAX_ALARM_S) -> dict:
-    """Event-level metrics over a set of recordings.
-
-    Parameters
-    ----------
-    meta : window metadata with columns ``edf_file, start_s, stop_s``.
-    scores : detector score per row of ``meta``.
-    seizure_table : ``edf_file, onset_s, offset_s`` for every annotated seizure
-        in the recordings covered by ``meta``.
-    """
-    meta = meta.reset_index(drop=True)
-    above = np.asarray(scores) >= threshold
-
-    detected: list[bool] = []
-    latencies: list[float] = []
-    n_false = 0
-    total_s = ictal_s = 0.0
-    n_above = int(above.sum())
-
-    by_file_seiz = {f: g.reset_index(drop=True)
-                    for f, g in seizure_table.groupby("edf_file")}
-
-    for fname, idx in meta.groupby("edf_file").groups.items():
-        idx = np.asarray(idx)
-        idx = idx[np.argsort(meta.loc[idx, "start_s"].to_numpy())]
-        st = meta.loc[idx, "start_s"].to_numpy()
-        sp = meta.loc[idx, "stop_s"].to_numpy()
-        total_s += float((sp - st).sum())
-
-        seiz = by_file_seiz.get(fname)
-        tol_windows: list[tuple[float, float]] = []
-        onsets: list[float] = []
-        if seiz is not None:
-            for r in seiz.itertuples():
-                tol_windows.append((r.onset_s - PRE_TOL, r.offset_s + POST_TOL))
-                onsets.append(float(r.onset_s))
-                ictal_s += float(r.offset_s - r.onset_s)
-
-        alarms = alarms_for_file(st, sp, above[idx], min_consecutive, max_alarm_s)
-        hit = [False] * len(tol_windows)
-        for a0, a1 in alarms:
-            matched = False
-            for k, (w0, w1) in enumerate(tol_windows):
-                if a0 <= w1 and a1 >= w0:
-                    matched = True
-                    if not hit[k]:
-                        hit[k] = True
-                        # clip: credit starts no earlier than the tolerance edge
-                        latencies.append(float(max(a0, w0) - onsets[k]))
-            if not matched:
-                n_false += 1
-        detected.extend(hit)
-
-    n_events = len(detected)
-    interictal_h = max(total_s - ictal_s, 1.0) / 3600.0
-    lat = np.asarray(latencies, dtype=float)
-    return {
-        "n_seizure_events": n_events,
-        "n_detected": int(np.sum(detected)),
-        "event_sensitivity": float(np.mean(detected)) if n_events else np.nan,
-        "n_false_alarms": int(n_false),
-        "false_alarms_per_hour": n_false / interictal_h,
-        "false_alarms_per_24h": 24.0 * n_false / interictal_h,
-        "alarm_duty_cycle": n_above / max(len(meta), 1),
-        "recorded_hours": total_s / 3600.0,
-        "median_latency_s": float(np.median(lat)) if lat.size else np.nan,
-        "mean_latency_s": float(np.mean(lat)) if lat.size else np.nan,
-    }
+    return EventScorer(meta, seizure_table, min_consecutive, max_alarm_s).score(
+        scores, threshold)
 
 
 def threshold_for_target_fa(meta: pd.DataFrame, scores: np.ndarray,
                             seizure_table: pd.DataFrame, target_fa_per_h: float,
-                            min_consecutive: int = 1, n_grid: int = 40,
+                            min_consecutive: int = 1, n_grid: int = 64,
                             max_alarm_s: float = MAX_ALARM_S) -> float:
-    """Smallest threshold whose false-alarm rate is <= the target.
-
-    Intended to be run on *training* data only; the chosen value is then applied
-    unchanged to held-out patients.
-    """
-    finite = np.asarray(scores)[np.isfinite(scores)]
-    if finite.size == 0:
-        return np.inf
-    qs = np.unique(np.quantile(finite, np.linspace(0.50, 0.9999, n_grid)))
-    for thr in qs:                      # increasing threshold -> fewer alarms
-        res = score_events(meta, scores, float(thr), seizure_table,
-                           min_consecutive, max_alarm_s)
-        if res["false_alarms_per_hour"] <= target_fa_per_h:
-            return float(thr)
-    return float(qs[-1])
+    return EventScorer(meta, seizure_table, min_consecutive,
+                       max_alarm_s).threshold_for_target_fa(
+        scores, target_fa_per_h, n_grid)

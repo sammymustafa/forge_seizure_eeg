@@ -3,3 +3,47 @@ featurising 21 cases with 4 workers
   chb08: ok files=20 windows=7202 ictal=97
   chb06: ok files=18 windows=24023 ictal=24
   chb07: ok files=19 windows=24138 ictal=36
+  chb11: ok files=35 windows=12524 ictal=83
+  chb10: ok files=25 windows=18007 ictal=49
+  chb12: ok files=21 windows=7446 ictal=123
+     skipped chb12_27.edf: ValueError('No appropriate channels found for the given picks ([])')
+     skipped chb12_28.edf: ValueError('No appropriate channels found for the given picks ([])')
+     skipped chb12_29.edf: ValueError('No appropriate channels found for the given picks ([])')
+  chb09: ok files=19 windows=24430 ictal=31
+  chb14: ok files=26 windows=9360 ictal=24
+  chb13: ok files=33 windows=11880 ictal=67
+  chb04: ok files=42 windows=56176 ictal=42
+  chb16: ok files=19 windows=6840 ictal=14
+  chb15: ok files=40 windows=14402 ictal=214
+  chb17: ok files=21 windows=7562 ictal=32
+  chb20: ok files=29 windows=9933 ictal=36
+  chb18: ok files=36 windows=12828 ictal=38
+  chb19: ok files=30 windows=10774 ictal=27
+  chb21: ok files=33 windows=11818 ictal=24
+  chb24: ok files=12 windows=4320 ictal=65
+  chb23: ok files=9 windows=9558 ictal=49
+  chb22: ok files=31 windows=11161 ictal=24
+ case  n_files  n_windows  n_ictal_windows      hours status
+chb04       42      56176               42 156.044444     ok
+chb05       39      14041               62  39.002778     ok
+chb06       18      24023               24  66.730556     ok
+chb07       19      24138               36  67.050000     ok
+chb08       20       7202               97  20.005556     ok
+chb09       19      24430               31  67.861111     ok
+chb10       25      18007               49  50.019444     ok
+chb11       35      12524               83  34.788889     ok
+chb12       21       7446              123  20.683333     ok
+chb13       33      11880               67  33.000000     ok
+chb14       26       9360               24  26.000000     ok
+chb15       40      14402              214  40.005556     ok
+chb16       19       6840               14  19.000000     ok
+chb17       21       7562               32  21.005556     ok
+chb18       36      12828               38  35.633333     ok
+chb19       30      10774               27  29.927778     ok
+chb20       29       9933               36  27.591667     ok
+chb21       33      11818               24  32.827778     ok
+chb22       31      11161               24  31.002778     ok
+chb23        9       9558               49  26.550000     ok
+chb24       12       4320               65  12.000000     ok
+
+TOTAL windows=308423 (856.7 h), ictal=1161
