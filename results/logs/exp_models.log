@@ -1,4 +1,6 @@
 loaded 350478 windows (973.5 h), 23 patients, 198 annotated seizures (4s)
 [models] windows=350252 (972.9 h) ictal=1337 patients=23 cases=24
-  full_18_bipolar                  n_feat=252 AUPRC=0.137 sens@6FA/h=0.742 FA/h=9.17 (110s)
-  temporal_4_contacts              n_feat= 28 AUPRC=0.130 sens@6FA/h=0.721 FA/h=5.57 (23s)
+  full_18_bipolar                lda     AUPRC=0.137 AUROC=0.781 (27s)
+  full_18_bipolar                logreg  AUPRC=0.090 AUROC=0.704 (171s)
+  full_18_bipolar                hgb     AUPRC=0.217 AUROC=0.899 (40s)
+  temporal_4_contacts            lda     AUPRC=0.130 AUROC=0.819 (4s)

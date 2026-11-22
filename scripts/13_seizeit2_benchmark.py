@@ -210,22 +210,58 @@ def main() -> None:
                    "sensitivity_lo", "sensitivity_hi", "median_latency_s"]]
               .round(3).to_string(index=False))
 
+    # --- contrasts, with the confounds they are exposed to spelled out
+    known_loc = main6[main6.onset_lobe != "unknown"]
+    no_f2b = main6[main6.seizure_type != "focal_to_bilateral_tonic_clonic"]
+    known_no_f2b = known_loc[
+        known_loc.seizure_type != "focal_to_bilateral_tonic_clonic"]
+
+    specs = [
+        ("all seizures", main6, "onset_lobe", "temporal", "frontal"),
+        ("all seizures", main6, "involves_temporal", True, False),
+        ("localisation annotated only", known_loc, "involves_temporal",
+         True, False),
+        ("excluding focal-to-bilateral", no_f2b, "involves_temporal",
+         True, False),
+        ("localisation annotated, excluding focal-to-bilateral",
+         known_no_f2b, "involves_temporal", True, False),
+        ("localisation annotated, excluding focal-to-bilateral",
+         known_no_f2b, "onset_lobe", "temporal", "frontal"),
+        ("all seizures", main6, "onset_vs_device", "ipsilateral",
+         "contralateral"),
+        ("excluding focal-to-bilateral", no_f2b, "onset_vs_device",
+         "ipsilateral", "contralateral"),
+        ("all seizures", main6, "vigilance", "asleep", "awake"),
+        ("all seizures", main6, "seizure_type",
+         "focal_to_bilateral_tonic_clonic", "focal_aware"),
+    ]
     contrasts = []
-    for col, a, b in [("onset_lobe", "temporal", "frontal"),
-                      ("involves_temporal", True, False),
-                      ("onset_vs_device", "ipsilateral", "contralateral"),
-                      ("vigilance", "asleep", "awake"),
-                      ("seizure_type", "focal_to_bilateral_tonic_clonic",
-                       "focal_aware")]:
-        d = paired_subgroup_delta(main6, col, a, b, seed=SEED)
+    for subset, frame, col, a, b in specs:
+        d = paired_subgroup_delta(frame, col, a, b, seed=SEED)
         if d:
             d["grouping"] = col
+            d["subset"] = subset
             contrasts.append(d)
-    cdf = pd.DataFrame(contrasts)
+    cdf = pd.DataFrame(contrasts)[
+        ["grouping", "subset", "comparison", "n_seizures_a", "n_patients_a",
+         "n_seizures_b", "n_patients_b", "sensitivity_a", "sensitivity_b",
+         "delta", "ci_lo", "ci_hi"]]
     cdf.to_csv(TABLES_DIR / "seizeit2_subgroup_contrasts.csv", index=False)
-    print("\n--- paired contrasts (patient bootstrap) ---")
-    print(cdf[["grouping", "comparison", "n_seizures_a", "n_seizures_b",
-               "sensitivity_a", "sensitivity_b", "delta", "ci_lo", "ci_hi"]]
+    print("\n--- paired contrasts (patient bootstrap, 95% CI) ---")
+    print(cdf.round(3).to_string(index=False))
+    print("\nNOTE: 'involves_temporal == False' pools genuinely non-temporal "
+          "onsets with seizures whose localisation is unannotated, which are "
+          "different facts; the 'localisation annotated only' rows remove that "
+          "pooling.")
+
+    # subgroup table for the lobe comparison on the cleanest subset
+    tab = subgroup_sensitivity(known_no_f2b, "onset_lobe", seed=SEED)
+    tab.insert(0, "subset", "localisation annotated, excluding focal-to-bilateral")
+    tab.to_csv(TABLES_DIR / "seizeit2_subgroup_onset_lobe_clean.csv", index=False)
+    print("\n--- sensitivity by onset lobe, localisation annotated, "
+          "excluding focal-to-bilateral ---")
+    print(tab[["onset_lobe", "n_seizures", "n_patients", "sensitivity",
+               "sensitivity_lo", "sensitivity_hi", "median_latency_s"]]
           .round(3).to_string(index=False))
 
     print("\nCAVEAT:", placement_confound_note())

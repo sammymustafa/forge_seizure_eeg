@@ -1,0 +1,6 @@
+dataset,target_fa_per_h,seizure_type,n_seizures,n_patients,n_detected,sensitivity,sensitivity_lo,sensitivity_hi,median_latency_s,latency_lo,latency_hi,median_duration_s,n_detected_with_latency
+seizeit2,6.0,focal_impaired_awareness,391,74,235,0.6010230179028133,0.435349488496968,0.7611309523809522,22.0,19.0,25.0,33.0,235
+seizeit2,6.0,focal_aware,316,34,172,0.5443037974683544,0.34899947478991594,0.7215207853855006,23.0,15.0,29.0,32.0,172
+seizeit2,6.0,focal_unknown_awareness,115,26,41,0.3565217391304348,0.2708333333333333,0.5074810374357719,24.0,18.0,41.0,14.0,41
+seizeit2,6.0,focal_to_bilateral_tonic_clonic,55,37,54,0.9818181818181818,0.936499493414387,1.0,30.0,25.0,33.0,108.0,54
+seizeit2,6.0,unknown_onset,6,2,4,0.6666666666666666,0.0,0.8,17.0,17.0,17.0,10.5,4

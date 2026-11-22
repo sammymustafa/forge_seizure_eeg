@@ -9,13 +9,17 @@ import nbformat as nbf
 from nbformat.v4 import new_code_cell, new_markdown_cell, new_notebook
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "notebooks" / "seizure_wearable_chbmit_results.ipynb"
+OUT = ROOT / "notebooks" / "forge_wearable_eeg_benchmark.ipynb"
 
 MD = new_markdown_cell
 CODE = new_code_cell
 
 CELLS = [
-    MD("""# Reduced-electrode seizure detection on CHB-MIT — results walkthrough
+    MD("""# FORGE — Wearable EEG Benchmark
+
+**Part 1 (§1–7): the CHB-MIT electrode-reduction benchmark.**
+**Part 2 (§8–12): the exploratory seizure-type and anatomical-onset analysis on
+SeizeIT2, plus the harmonised schema and the TUH-ready adapter.**
 
 This notebook reads the artefacts produced by the scripts in `scripts/`; it does
 not recompute them. To regenerate everything from scratch:
@@ -178,6 +182,154 @@ display(pp.round(3))"""),
 * SeizeIT2's public release has behind-the-ear wearable signals and clinical
   annotations but **no paired full-scalp EEG**, so it supports external
   validation, not a same-recording electrode ablation."""),
+
+    MD("""---
+
+# Part 2 — Seizure type and anatomical onset
+
+Everything below uses **SeizeIT2** (OpenNeuro `ds005873`): real behind-the-ear
+wearable EEG from 125 patients with focal epilepsy, with clinical annotations
+for seizure subtype, onset lobe, hemisphere and vigilance.
+
+**These are not interchangeable with Part 1.** CHB-MIT gives *scalp-position
+proxies* for a wearable; SeizeIT2 gives a *real* two-channel around-ear device
+with no paired full-scalp recording. The two are never plotted on shared axes,
+and no full-versus-wearable claim is made from SeizeIT2.
+
+## 8. The harmonised dataset layer
+
+One schema spans all three corpora, so a subgroup analysis is written once."""),
+
+    CODE("""from seizure_eeg.datasets.chbmit import CHBMITAdapter
+from seizure_eeg.datasets.seizeit2 import SeizeIT2Adapter
+from seizure_eeg.datasets.tuh import TUSZAdapter, mapping_plan_frame
+
+adapters = {
+    "CHB-MIT (scalp proxy)": CHBMITAdapter(ROOT / "data" / "chbmit"),
+    "SeizeIT2 (real wearable)": SeizeIT2Adapter(ROOT / "data" / "seizeit2"),
+    "TUSZ (planned)": TUSZAdapter(ROOT / "data" / "tusz"),
+}
+avail = pd.DataFrame({name: ad.label_availability()
+                      for name, ad in adapters.items()})
+display(Markdown("**Which clinical labels each dataset actually carries**"))
+display(avail)
+display(Markdown(
+    "`not_annotated` means the dataset has no such field. It is never filled "
+    "in by inferring anatomy from the signal - that would manufacture a "
+    "clinical label and make the subgroup analysis circular."))"""),
+
+    MD("""## 9. SeizeIT2 annotation inventory
+
+Parsed straight from the BIDS `*_events.tsv` files. Multilobar and unknown
+onsets are kept as their own categories rather than folded into one lobe."""),
+
+    CODE("""ev2 = pd.read_csv(TABLES_DIR / "seizeit2_events_harmonised.csv")
+print(f"{len(ev2)} seizures, {ev2.patient_id.nunique()} patients, "
+      f"{ev2.recording_id.nunique()} recordings, "
+      f"{ev2.duration_s.sum()/3600:.1f} ictal hours")
+for col in ["seizure_type", "onset_lobe", "onset_hemisphere", "vigilance"]:
+    g = (ev2.groupby(col)
+         .agg(seizures=("event_index", "size"),
+              patients=("patient_id", "nunique"))
+         .sort_values("seizures", ascending=False))
+    display(Markdown(f"**by `{col}`**"))
+    display(g)"""),
+
+    CODE("""display(Image(filename=str(FIGURES_DIR / "fig8_seizeit2_annotation_inventory.png")))"""),
+
+    MD("""### How the raw ILAE codes are harmonised
+
+`sz_foc_a` (focal aware) and `sz_foc_ia` (focal impaired awareness) share a
+string prefix, so matching is on complete underscore segments, not prefixes."""),
+
+    CODE("""from seizure_eeg.datasets.seizeit2 import (harmonise_localization,
+                                            harmonise_seizure_type)
+
+display(pd.DataFrame(
+    [{"raw eventType": c, "harmonised": harmonise_seizure_type(c)}
+     for c in ["sz_foc_a", "sz_foc_a_m_automatisms", "sz_foc_ia",
+               "sz_foc_ia_nm_behavior", "sz_foc_ua_m", "sz_foc_f2b",
+               "sz_gen_m_tonicClonic", "sz_uo", "sz"]]))
+display(pd.DataFrame(
+    [{"raw localization": c, "onset_lobe": harmonise_localization(c)[0],
+      "all lobes": ", ".join(harmonise_localization(c)[1]) or "-"}
+     for c in ["temp", "front", "front_temp", "front_cen_temp",
+               "temp_par_occ", "ins", "un"]]))"""),
+
+    MD("""## 10. Detection on real wearable EEG, by seizure subtype
+
+Same pipeline as Part 1: 10 s windows, same feature set, shrinkage LDA,
+patient-disjoint 5-fold CV, thresholds fitted on training patients only."""),
+
+    CODE("""folds2 = pd.read_csv(TABLES_DIR / "seizeit2_cv_folds.csv")
+out2 = pd.read_csv(TABLES_DIR / "seizeit2_event_outcomes.csv")
+m6 = out2[out2.target_fa_per_h == 6.0]
+f6 = folds2[folds2.target_fa_per_h == 6.0]
+print(f"{int(m6.detected.sum())}/{len(m6)} seizures detected "
+      f"({m6.detected.mean():.1%}) at the 6 FA/h target; "
+      f"median latency {m6.loc[m6.detected,'latency_s'].median():.0f} s; "
+      f"mean AUPRC {f6.auprc.mean():.3f} (prevalence {f6.prevalence.mean():.4f})")
+display(pd.read_csv(TABLES_DIR / "seizeit2_subgroup_seizure_type.csv")
+        .drop(columns=["dataset"], errors="ignore").round(3))
+display(Image(filename=str(FIGURES_DIR / "fig5_seizeit2_subtype.png")))"""),
+
+    MD("""## 11. Anatomical onset — exploratory
+
+> The behind-the-ear sensors were positioned with reference to each patient's
+> suspected onset zone, so anatomy and electrode placement are confounded.
+> Read every row here as hypothesis-generating."""),
+
+    CODE("""display(pd.read_csv(TABLES_DIR / "seizeit2_subgroup_onset_lobe.csv")
+        .drop(columns=["dataset"], errors="ignore").round(3))
+display(Image(filename=str(FIGURES_DIR / "fig6_seizeit2_onset_location.png")))"""),
+
+    MD("""### Does the temporal-lobe hypothesis survive its confounds?
+
+`involves_temporal == False` pools genuinely non-temporal onsets with seizures
+whose localisation was never annotated. And focal-to-bilateral seizures are
+detected almost perfectly, so they have to be excluded to separate the
+anatomical question from the seizure-type one."""),
+
+    CODE("""con = pd.read_csv(TABLES_DIR / "seizeit2_subgroup_contrasts.csv")
+display(con[con.grouping.isin(["onset_lobe", "involves_temporal"])]
+        [["grouping", "subset", "comparison", "n_seizures_a", "n_seizures_b",
+          "sensitivity_a", "sensitivity_b", "delta", "ci_lo", "ci_hi"]]
+        .round(3))"""),
+
+    CODE("""display(Image(filename=str(FIGURES_DIR / "fig7_seizeit2_proximity_vigilance.png")))
+display(con[con.grouping.isin(["onset_vs_device", "vigilance", "seizure_type"])]
+        [["grouping", "subset", "comparison", "n_seizures_a", "n_seizures_b",
+          "sensitivity_a", "sensitivity_b", "delta", "ci_lo", "ci_hi"]]
+        .round(3))"""),
+
+    MD("""## 12. TUH (TUSZ) — prepared, not run
+
+The adapter is a skeleton and refuses to produce results until a real corpus is
+mounted, so no TUH number can appear by accident."""),
+
+    CODE("""print("TUSZAdapter.IMPLEMENTED =", TUSZAdapter.IMPLEMENTED)
+try:
+    adapters["TUSZ (planned)"].recordings()
+except NotImplementedError as exc:
+    print("\\nrecordings() refuses:\\n ", str(exc)[:240], "...")
+display(Markdown("**Seizure-code mapping plan**"))
+display(mapping_plan_frame())"""),
+
+    MD("""### Two rules that must survive TUH integration
+
+1. **A seizure-type code is not an anatomical onset label.** `cpsz` means focal
+   with impaired awareness; it says nothing about which lobe.
+2. **Channel-level annotations are not localisation.** TUSZ marks which
+   channels an event was seen on — an electrographic field shaped by montage
+   and propagation, not a validated onset lobe.
+
+The planned TUSZ analysis is the one neither corpus here can do: **does the gap
+between full-scalp and wearable-inspired configurations depend on seizure
+type?** TUSZ is the only one of the three with both full-scalp EEG and clinical
+seizure-type codes.
+
+The full write-up, with every number regenerated from the result tables, is in
+`REPORT.md`."""),
 ]
 
 

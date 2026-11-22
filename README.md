@@ -1,15 +1,34 @@
-# Seizure detection with reduced, wearable-plausible electrode sets
+# FORGE — Wearable EEG Benchmark
 
 How much seizure-detection performance is lost when a full scalp EEG montage is
 cut down to the handful of contacts that would fit in smart glasses or an
-around-ear wearable?
+around-ear wearable — and does that depend on the seizure's type or where in the
+brain it starts?
+
+**Full write-up: [REPORT.md](REPORT.md). Notebook:
+[`notebooks/forge_wearable_eeg_benchmark.ipynb`](notebooks/forge_wearable_eeg_benchmark.ipynb).**
+
+| | Primary objective | Secondary objective |
+|---|---|---|
+| Question | What does reducing electrode count and moving placement cost? | Does detection depend on seizure type and anatomical onset? |
+| Dataset | CHB-MIT — scalp positions as *proxies* for a wearable | SeizeIT2 — a *real* behind-the-ear device |
+| Status | Complete (23 patients, 198 seizures, 973 h) | Complete, exploratory (125 patients, 883 seizures, 3 062 h) |
+| Planned | — | TUH/TUSZ: does the full-vs-wearable gap depend on seizure type? |
+
+> **The two EEG sources are never pooled.** CHB-MIT gives scalp-position proxies
+> for a wearable; SeizeIT2 gives real behind-the-ear hardware with no paired
+> full-scalp recording. They are reported separately and never plotted on shared
+> axes.
 
 Every configuration is evaluated on **the same recordings, the same 10-second
 windows and the same annotations**, so nothing in the comparison is confounded
 by recording conditions. Validation is **patient-disjoint**.
 
-Dataset: [CHB-MIT Scalp EEG Database](https://physionet.org/content/chbmit/1.0.0/)
-(Guttag, 2010) — 24 recorded cases, 23 distinct people, 198 annotated seizures.
+Datasets:
+[CHB-MIT](https://physionet.org/content/chbmit/1.0.0/) (24 cases, 23 people,
+198 seizures) and
+[SeizeIT2](https://openneuro.org/datasets/ds005873) (OpenNeuro `ds005873`,
+125 patients, 883 focal seizures, behind-the-ear wearable EEG).
 
 ## What is actually being compared
 
@@ -54,6 +73,7 @@ patient-general wearable detector.
 ## Pipeline
 
 ```
+# --- CHB-MIT: the electrode-reduction benchmark
 scripts/01_inventory.py          # fetch all 24 summaries, parse annotations
 scripts/02_download.py           # fetch the EDFs listed in those summaries
 scripts/03_extract_features.py   # EDF -> 10 s window features (parallel)
@@ -63,9 +83,25 @@ scripts/06_experiments.py main   # patient-disjoint CV across montages
 scripts/06_experiments.py random # placement control over all channel pairs
 scripts/06_experiments.py lower  # adds the FT9/FT10 montage where available
 scripts/06_experiments.py raw    # ablation: no per-recording normalisation
-scripts/07_report.py             # summary tables
+scripts/06_experiments.py models # classifier check
+scripts/07_report.py             # CHB-MIT summary tables + RESULTS.md
 scripts/05_figures.py results    # Figs 2-5
+
+# --- SeizeIT2: real wearable, seizure type and anatomical onset
+scripts/10_seizeit2_fetch.py metadata          # ~5700 small annotation files
+scripts/11_seizeit2_inventory.py               # harmonised annotation tables
+scripts/10_seizeit2_fetch.py eeg --with-seizures   # 12.5 GB, not the full 126
+scripts/12_seizeit2_features.py                # same features as CHB-MIT
+scripts/13_seizeit2_benchmark.py               # subgroup sensitivity + latency
+scripts/14_seizeit2_figures.py                 # Figs 5-8
+
+# --- cross-dataset
+scripts/16_harmonised_events.py  # one event CSV schema for every dataset
+scripts/15_research_report.py    # REPORT.md
+scripts/08_build_notebook.py --execute
 ```
+
+`run_all.sh` chains all of it.
 
 ### Signal processing
 
@@ -86,6 +122,34 @@ scripts/05_figures.py results    # Figs 2-5
   but it is non-causal — it models an offline analysis or a device with a long
   calibration baseline, not a strictly online detector. The `raw` experiment is
   the ablation without it.
+
+### Datasets, adapters and the harmonised schema
+
+`seizure_eeg.datasets` gives every corpus one interface
+(`recordings()`, `events()`, `load_signals()`, `montages()`,
+`label_availability()`), and `seizure_eeg.schema` defines one event/recording
+CSV layout for all of them. Two rules shape it:
+
+* **Raw labels survive.** Every harmonised field keeps the source dataset's own
+  string beside it in a `*_raw` column.
+* **Missing is not a category.** `unknown` (the dataset says so) and
+  `not_annotated` (the dataset has no such field) are different facts and are
+  never pooled; `*_provenance` records which applies.
+
+| Field | CHB-MIT | SeizeIT2 | TUSZ (planned) |
+|---|---|---|---|
+| seizure type | not annotated | annotated | annotated |
+| onset lobe | not annotated | annotated | not annotated |
+| onset hemisphere | not annotated | annotated | not annotated |
+| vigilance | not annotated | annotated | not annotated |
+| channel-level annotation | not annotated | not annotated | annotated |
+| paired full-scalp EEG | annotated | **not annotated** | annotated |
+
+CHB-MIT ships onset and offset times only. Anatomical origin is **not** inferred
+from which channels carry the most power or the largest classifier weight —
+that would manufacture a clinical label from a signal statistic and make the
+subgroup analysis circular. `chbmit.load_external_annotations` accepts a
+published table instead, and rejects any row without a citation.
 
 ### Classifier and validation
 

@@ -1,0 +1,7 @@
+field,chbmit,seizeit2,tusz (planned)
+seizure_type,not_annotated,annotated,annotated
+onset_lobe,not_annotated,annotated,not_annotated
+onset_hemisphere,not_annotated,annotated,not_annotated
+vigilance,not_annotated,annotated,not_annotated
+channel_level_annotation,not_annotated,not_annotated,annotated
+paired_full_scalp_eeg,annotated,not_annotated,annotated

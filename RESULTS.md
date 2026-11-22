@@ -64,6 +64,28 @@ The confidence interval excludes zero, so in this cohort *which side* a single-c
 
 Lower-temporal detects 142/181 seizures at 6.1 false alarms/h with a median latency of 18 s. That is the same seizure count as the full montage (142/181) at 9.6 FA/h, i.e. a comparable yield for fewer alarms, although its patient-mean sensitivity is slightly lower (0.83 vs 0.85) and its AUPRC is clearly lower (-0.068 [-0.146, +0.009] against full scalp, a CI that still includes zero).
 
+## Placement control
+
+Every one of the 153 two-channel subsets of the standard 18 derivations, scored with the same patient-disjoint CV. This puts the wearable-plausible placements on a percentile rather than only against each other.
+
+* Best pair overall: `T7-P7+FZ-CZ` (AUPRC 0.213); median over all pairs 0.127; worst 0.062.
+* Temporal (`F7-T7+F8-T8`): AUPRC 0.130 — 55th percentile of all pairs.
+* Glasses-like (`FP1-F7+FP2-F8`): AUPRC 0.090 — 14th percentile of all pairs.
+* Posterior-temporal (`T7-P7+T8-P8`): AUPRC 0.169 — 88th percentile of all pairs.
+
+## Ablation: per-recording normalisation
+
+Robust per-recording scaling of each feature is label-free but non-causal. Removing it changes mean AUPRC as follows:
+
+| Configuration | with scaling | without | change |
+|---|---:|---:|---:|
+| Full scalp (18 bipolar ch) | 0.137 | 0.105 | -0.032 |
+| Glasses-like (4 contacts, 2 ch) | 0.090 | 0.028 | -0.062 |
+| Left temporal (2 contacts, 1 ch) | 0.171 | 0.047 | -0.124 |
+| Posterior-temporal (4 contacts, 2 ch) | 0.169 | 0.059 | -0.109 |
+| Right temporal (2 contacts, 1 ch) | 0.060 | 0.029 | -0.032 |
+| Temporal (4 contacts, 2 ch) | 0.130 | 0.050 | -0.080 |
+
 ## Between-patient spread
 
 Per-patient AUPRC ranges from 0.001 to 0.794 (Figure 5). The spread between patients is much larger than the spread between electrode sets, so a patient-general wearable detector is limited far more by cross-patient variability than by electrode count.

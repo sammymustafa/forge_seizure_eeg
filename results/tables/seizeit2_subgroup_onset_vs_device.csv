@@ -1,0 +1,4 @@
+dataset,target_fa_per_h,onset_vs_device,n_seizures,n_patients,n_detected,sensitivity,sensitivity_lo,sensitivity_hi,median_latency_s,latency_lo,latency_hi,median_duration_s,n_detected_with_latency
+seizeit2,6.0,undetermined,445,50,206,0.46292134831460674,0.3409435325967374,0.6426824742268041,21.0,17.0,24.0,15.0,206
+seizeit2,6.0,ipsilateral,386,88,261,0.6761658031088082,0.5559227871939736,0.7704503947938408,25.0,20.0,29.0,70.5,261
+seizeit2,6.0,contralateral,52,18,39,0.75,0.531234056122449,0.9148936170212766,31.0,23.4875,40.0,99.0,39

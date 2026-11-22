@@ -1,0 +1,7 @@
+subset,onset_lobe,n_seizures,n_patients,n_detected,sensitivity,sensitivity_lo,sensitivity_hi,median_latency_s,latency_lo,latency_hi,median_duration_s,n_detected_with_latency
+"localisation annotated, excluding focal-to-bilateral",temporal,247,60,165,0.6680161943319838,0.5518489485099962,0.7782426778242678,23.0,21.0,28.0,56.0,165
+"localisation annotated, excluding focal-to-bilateral",multilobar,168,28,115,0.6845238095238095,0.4352225755166932,0.8090300035612535,29.0,18.0,35.0,82.5,115
+"localisation annotated, excluding focal-to-bilateral",frontal,155,16,86,0.5548387096774193,0.43975643955130866,0.7164278166688679,15.0,13.0,20.0,16.0,86
+"localisation annotated, excluding focal-to-bilateral",insular,17,2,2,0.11764705882352941,0.0,0.5,10.5,10.5,10.5,14.0,2
+"localisation annotated, excluding focal-to-bilateral",occipital,17,5,10,0.5882352941176471,0.3333333333333333,0.9230769230769231,25.0,19.0,89.0,81.0,10
+"localisation annotated, excluding focal-to-bilateral",central,11,1,5,0.45454545454545453,,,24.0,,,7.0,5

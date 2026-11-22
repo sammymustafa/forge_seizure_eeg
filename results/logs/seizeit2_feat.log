@@ -12,3 +12,9 @@ featurising 395 recordings with 4 workers
   275/395 sub-087_ses-01_task-szMonitoring_run-22: ok
   300/395 sub-094_ses-01_task-szMonitoring_run-08: ok
   325/395 sub-102_ses-01_task-szMonitoring_run-03: ok
+  350/395 sub-113_ses-01_task-szMonitoring_run-04: ok
+  375/395 sub-119_ses-01_task-szMonitoring_run-30: ok
+
+ok=395 failed=0
+windows=1102233 (3061.8 h) ictal=5951
+channel sets: {'BTEleft SD;CROSStop SD': 215, 'BTEright SD;CROSStop SD': 112, 'BTEleft SD;BTEright SD': 68}

@@ -120,13 +120,29 @@ def cmd_random(store):
 
 
 def cmd_models(store):
+    """Does a non-linear model change the electrode ranking?
+
+    Threshold-free (AUPRC/AUROC only): the question is whether shrinkage LDA
+    understates what the reduced montages carry, and the ranking answers that
+    without the cost of tuning an operating point for every fold.
+    """
     mask = paired_mask(store, PRIMARY)
     _describe(store, mask, "models")
     out = []
-    for model in ("lda", "hgb"):
-        f, _ = run_set(store, ["full_18_bipolar", "temporal_4_contacts"], mask,
-                       normalise="perfile", model=model)
-        out.append(f)
+    for mont in ["full_18_bipolar", "temporal_4_contacts",
+                 "posterior_temporal_4_contacts", "glasses_4_contacts"]:
+        X, _, _ = montage_design(store, mont)
+        X = normalise_per_file(X[mask], store.meta.loc[mask])
+        for model in ("lda", "logreg", "hgb"):
+            t0 = time.time()
+            f, _ = run_montage_cv(store, mont, mask, feature_matrix=X,
+                                  model_kind=model, normalise="perfile",
+                                  target_fa_per_h=(), per_patient=False)
+            f["montage"] = mont
+            out.append(f)
+            print(f"  {mont:30s} {model:7s} AUPRC={f.auprc.mean():.3f} "
+                  f"AUROC={f.auroc.mean():.3f} ({time.time()-t0:.0f}s)",
+                  flush=True)
     pd.concat(out, ignore_index=True).to_csv(
         TABLES_DIR / "cv_folds_models.csv", index=False)
 

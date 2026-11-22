@@ -10,25 +10,52 @@ import numpy as np
 import pandas as pd
 
 
-def _patient_bootstrap(df: pd.DataFrame, stat, n_boot: int = 5000,
+def _resample_indices(df: pd.DataFrame, n_boot: int, rng: np.random.Generator):
+    """Yield row-index arrays for ``n_boot`` patient-level resamples.
+
+    Patients are resampled with replacement and all of a patient's events come
+    along, so a person contributing many seizures is correctly treated as one
+    observation rather than many.
+    """
+    patients = df.patient_id.to_numpy()
+    uniq = np.unique(patients)
+    if uniq.size < 2:
+        return uniq, None
+    per_patient = [np.flatnonzero(patients == p) for p in uniq]
+    picks = rng.integers(0, len(uniq), size=(n_boot, len(uniq)))
+    return uniq, (per_patient, picks)
+
+
+def _patient_bootstrap(df: pd.DataFrame, stat, n_boot: int = 2000,
                        alpha: float = 0.05, seed: int = 0) -> tuple[float, float]:
-    """Percentile CI for ``stat(df)`` resampling whole patients with replacement."""
-    patients = df.patient_id.unique()
-    if len(patients) < 2:
-        return (np.nan, np.nan)
+    """Percentile CI for ``stat`` over patient-level resamples."""
     rng = np.random.default_rng(seed)
-    by_patient = {p: g for p, g in df.groupby("patient_id")}
+    uniq, plan = _resample_indices(df, n_boot, rng)
+    if plan is None:
+        return (np.nan, np.nan)
+    per_patient, picks = plan
+    detected = df.detected.to_numpy().astype(bool)
+    latency = df.latency_s.to_numpy(dtype=float)
     vals = []
-    for _ in range(n_boot):
-        pick = rng.choice(patients, size=len(patients), replace=True)
-        sample = pd.concat([by_patient[p] for p in pick], ignore_index=True)
-        v = stat(sample)
+    for row in picks:
+        idx = np.concatenate([per_patient[i] for i in row])
+        v = stat(detected[idx], latency[idx])
         if np.isfinite(v):
             vals.append(v)
     if not vals:
         return (np.nan, np.nan)
     return (float(np.quantile(vals, alpha / 2)),
             float(np.quantile(vals, 1 - alpha / 2)))
+
+
+def _sens_arr(detected: np.ndarray, latency: np.ndarray) -> float:
+    return float(detected.mean()) if detected.size else np.nan
+
+
+def _lat_arr(detected: np.ndarray, latency: np.ndarray) -> float:
+    d = latency[detected]
+    d = d[np.isfinite(d)]
+    return float(np.median(d)) if d.size else np.nan
 
 
 def _sensitivity(df: pd.DataFrame) -> float:
@@ -53,8 +80,8 @@ def subgroup_sensitivity(events: pd.DataFrame, by: str, *, min_events: int = 1,
     for key, g in events.groupby(by, dropna=False):
         if len(g) < min_events:
             continue
-        s_lo, s_hi = _patient_bootstrap(g, _sensitivity, n_boot, seed=seed)
-        l_lo, l_hi = _patient_bootstrap(g, _median_latency, n_boot, seed=seed)
+        s_lo, s_hi = _patient_bootstrap(g, _sens_arr, n_boot, seed=seed)
+        l_lo, l_hi = _patient_bootstrap(g, _lat_arr, n_boot, seed=seed)
         det = g[g.detected]
         rows.append({
             by: key,
@@ -81,19 +108,22 @@ def paired_subgroup_delta(events: pd.DataFrame, by: str, a: str, b: str,
     the same resample, so the CI respects the fact that one patient can
     contribute seizures to both subgroups.
     """
-    sub = events[events[by].isin([a, b])]
+    sub = events[events[by].isin([a, b])].reset_index(drop=True)
     if sub.empty:
         return {}
-    patients = sub.patient_id.unique()
-    by_patient = {p: g for p, g in sub.groupby("patient_id")}
     rng = np.random.default_rng(seed)
-    deltas = []
-    for _ in range(n_boot):
-        pick = rng.choice(patients, size=len(patients), replace=True)
-        s = pd.concat([by_patient[p] for p in pick], ignore_index=True)
-        ga, gb = s[s[by] == a], s[s[by] == b]
-        if len(ga) and len(gb):
-            deltas.append(ga.detected.mean() - gb.detected.mean())
+    uniq, plan = _resample_indices(sub, n_boot, rng)
+    deltas: list[float] = []
+    if plan is not None:
+        per_patient, picks = plan
+        detected = sub.detected.to_numpy().astype(bool)
+        is_a = (sub[by] == a).to_numpy()
+        is_b = (sub[by] == b).to_numpy()
+        for row in picks:
+            idx = np.concatenate([per_patient[i] for i in row])
+            da, db = detected[idx][is_a[idx]], detected[idx][is_b[idx]]
+            if da.size and db.size:
+                deltas.append(float(da.mean() - db.mean()))
     ga, gb = sub[sub[by] == a], sub[sub[by] == b]
     return {
         "comparison": f"{a} - {b}",

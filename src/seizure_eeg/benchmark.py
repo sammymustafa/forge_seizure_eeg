@@ -143,8 +143,12 @@ def make_model(kind: str = "lda"):
         )
     if kind == "hgb":
         from sklearn.ensemble import HistGradientBoostingClassifier
+        # Tuned for cost: at ~350k windows and 252 features the default 200
+        # iterations take tens of minutes per fold, and this is a sanity check
+        # on the model class, not a bid for best accuracy.
         return HistGradientBoostingClassifier(
-            max_iter=200, learning_rate=0.1, max_leaf_nodes=31,
+            max_iter=60, learning_rate=0.15, max_leaf_nodes=15,
+            early_stopping=True, validation_fraction=0.1,
             class_weight="balanced", random_state=0)
     raise ValueError(f"unknown model kind {kind!r}")
 
