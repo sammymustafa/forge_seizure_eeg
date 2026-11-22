@@ -144,13 +144,15 @@ def _bar_panel(ax, stats, order, title, xlabel, fmt="{:.2f}", xmax=None):
         ax.barh(y, r["mean"], height=0.62, color=c, zorder=3)
         ax.plot([r["lo"], r["hi"]], [y, y], color=INK_2, lw=1.4, zorder=4,
                 solid_capstyle="butt")
-        ax.text(r["mean"] + (xmax or stats["hi"].max()) * 0.015, y,
+        span = xmax or stats["hi"].max()
+        ax.text(max(r["mean"], r["hi"]) + span * 0.02, y,
                 fmt.format(r["mean"]), va="center", ha="left", fontsize=8.5,
-                color=INK, fontweight="semibold", zorder=5)
+                color=INK, fontweight="bold", zorder=5)
     ax.set_yticks(ypos)
     ax.set_yticklabels([MONTAGE_LABELS[m] for m in order], fontsize=8.5)
+    ax.tick_params(axis="y", length=0)
     ax.set_xlabel(xlabel)
-    ax.set_title(title, loc="left")
+    ax.set_title(title, loc="left", pad=10)
     ax.grid(axis="y", visible=False)
     if xmax:
         ax.set_xlim(0, xmax)
@@ -164,32 +166,35 @@ def fig_results() -> None:
     use_style()
 
     # ---- fig 2: headline comparison
-    fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.2))
+    fig, axes = plt.subplots(1, 3, figsize=(14.5, 4.4),
+                             gridspec_kw={"wspace": 0.10})
     au = _agg(patients, "auprc", 6.0)
-    _bar_panel(axes[0], au, order, "A   AUPRC (threshold-free)",
+    _bar_panel(axes[0], au, order, "A   AUPRC",
                "Area under precision–recall curve", "{:.3f}",
-               xmax=max(0.05, au["hi"].max() * 1.22))
+               xmax=max(0.05, au["hi"].max() * 1.30))
     se = _agg(patients, "event_sensitivity", 6.0)
-    _bar_panel(axes[1], se, order,
-               "B   Seizure sensitivity at ≤6 false alarms/h",
-               "Fraction of seizures detected", "{:.2f}", xmax=1.05)
+    _bar_panel(axes[1], se, order, "B   Seizure sensitivity",
+               "Fraction of seizures detected", "{:.2f}", xmax=1.12)
     axes[1].set_yticklabels([])
     la = _agg(patients, "median_latency_s", 6.0)
     _bar_panel(axes[2], la, order, "C   Median detection latency",
                "Seconds after annotated onset", "{:.0f}s",
-               xmax=max(10, la["hi"].max() * 1.25))
+               xmax=max(10, la["hi"].max() * 1.32))
     axes[2].set_yticklabels([])
-    fig.suptitle("Patient-disjoint performance by electrode set "
-                 "(24 subjects, identical windows; bars = mean over patients, "
-                 "line = 95% bootstrap CI)",
-                 fontsize=11.5, fontweight="bold", x=0.012, ha="left", y=1.04)
+    n_pat = patients.patient_id.nunique()
+    fig.suptitle("Patient-disjoint performance by electrode set — "
+                 f"{n_pat} patients, identical windows, thresholds fitted on "
+                 "training patients for ≤6 false alarms/h\n"
+                 "bars = mean over held-out patients, line = 95% bootstrap CI "
+                 "over patients",
+                 fontsize=11, fontweight="bold", x=0.008, ha="left", y=1.10)
     fig.savefig(FIGURES_DIR / "fig2_montage_performance.png")
     plt.close(fig)
 
     # ---- fig 3: sensitivity vs allowed false-alarm rate
-    fig, ax = plt.subplots(figsize=(7.6, 4.6))
+    fig, ax = plt.subplots(figsize=(8.6, 5.2))
     targets = sorted(patients.target_fa_per_h.unique())
-    for mont in order:
+    for i, mont in enumerate(order):
         xs, ys = [], []
         for tgt in targets:
             g = patients[(patients.montage == mont)
@@ -198,16 +203,23 @@ def fig_results() -> None:
             ys.append(g.groupby("patient_id").event_sensitivity.mean().mean())
         ax.plot(xs, ys, marker="o", color=MONTAGE_COLOR[mont],
                 label=MONTAGE_LABELS[mont], lw=2, markersize=6,
-                markeredgecolor="white", markeredgewidth=1.2)
-        ax.annotate(MONTAGE_LABELS[mont].split(" (")[0], (xs[-1], ys[-1]),
-                    xytext=(5, 0), textcoords="offset points", fontsize=8,
-                    color=INK_2, va="center")
+                markeredgecolor="white", markeredgewidth=1.2, zorder=3)
+        if i == 0:   # label the operating points once, on the reference series
+            xmax_pt = max(xs)
+            for x, y, tgt in zip(xs, ys, targets):
+                right = x > 0.6 * xmax_pt
+                ax.annotate(f"{tgt:g} FA/h target", (x, y),
+                            xytext=(-8 if right else 8, -13),
+                            textcoords="offset points", fontsize=8,
+                            color=INK_MUTED, ha="right" if right else "left")
     ax.set(xlabel="Achieved false alarms per hour on held-out patients",
-           ylabel="Seizure sensitivity", ylim=(0, 1.02))
-    ax.set_title("Sensitivity / false-alarm trade-off\n"
-                 "thresholds fitted on training patients at 1, 6 and 24 FA/h",
-                 loc="left")
-    ax.legend(loc="lower right", ncol=1)
+           ylabel="Seizure sensitivity", ylim=(0.3, 1.02))
+    ax.set_title("Sensitivity / false-alarm trade-off — at a matched alarm "
+                 "budget the reduced sets are not behind\n"
+                 "each point is one target budget; thresholds fitted on "
+                 "training patients, FA/h measured on held-out patients",
+                 loc="left", pad=10)
+    ax.legend(loc="lower right", ncol=2)
     despine(ax)
     fig.savefig(FIGURES_DIR / "fig3_sensitivity_vs_false_alarms.png")
     plt.close(fig)
@@ -248,17 +260,29 @@ def fig_results() -> None:
     piv = d.pivot_table(index="patient_id", columns="montage", values="auprc")
     cols = [m for m in order if m in piv.columns]
     piv = piv[cols].sort_values(cols[0], ascending=False)
-    fig, ax = plt.subplots(figsize=(11.5, 4.8))
+    fig, ax = plt.subplots(figsize=(12, 5.2))
     xs = np.arange(len(piv))
+    # Patients are discrete, so draw the per-patient range rather than joining
+    # categories with a line that would imply continuity.
+    for x, (_, row) in zip(xs, piv.iterrows()):
+        v = row.dropna()
+        if len(v) > 1:
+            ax.plot([x, x], [v.min(), v.max()], color=GRID, lw=5,
+                    solid_capstyle="round", zorder=1)
     for mont in cols:
-        ax.plot(xs, piv[mont], marker="o", lw=1.1, markersize=5,
-                color=MONTAGE_COLOR[mont], label=MONTAGE_LABELS[mont],
-                alpha=0.95, markeredgecolor="white", markeredgewidth=0.8)
+        ax.scatter(xs, piv[mont], s=38, color=MONTAGE_COLOR[mont],
+                   label=MONTAGE_LABELS[mont], zorder=3,
+                   edgecolor="white", linewidth=0.9)
     ax.set_xticks(xs)
-    ax.set_xticklabels(piv.index, rotation=45, ha="right", fontsize=8)
+    ax.set_xticklabels(piv.index, rotation=45, ha="right", fontsize=8.5)
+    ax.set_xlim(-0.7, len(piv) - 0.3)
     ax.set(ylabel="AUPRC on held-out patient", xlabel="")
+    ax.grid(axis="x", visible=False)
+    ax.tick_params(axis="x", length=0)
     ax.set_title("Per-patient AUPRC — the spread between patients dwarfs the "
-                 "spread between electrode sets", loc="left")
+                 "spread between electrode sets\n"
+                 "patients ordered by full-scalp AUPRC; grey bar spans the "
+                 "electrode sets for that patient", loc="left", pad=10)
     ax.legend(loc="upper right", ncol=2)
     despine(ax)
     fig.savefig(FIGURES_DIR / "fig5_per_patient.png")

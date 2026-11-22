@@ -193,6 +193,22 @@ def run_montage_cv(store: WindowStore, montage: str, mask: np.ndarray, *,
 
         meta_te = meta.iloc[te].reset_index(drop=True)
         seiz_te = seiz[seiz.edf_file.isin(set(meta_te.edf_file))]
+
+        if not target_fa_per_h:
+            # Threshold-free run (used by the placement control): no inner CV,
+            # no event scoring, just the ranking metrics.
+            rows.append({
+                "montage": montage, "fold": fold, "model": model_kind,
+                "normalise": normalise, "n_features": int(X.shape[1]),
+                "test_patients": ",".join(sorted(set(groups[te]))),
+                "n_test_windows": int(len(te)),
+                "n_test_ictal_windows": int(y[te].sum()),
+                "auprc": float(average_precision_score(y[te], s_te)),
+                "auroc": float(roc_auc_score(y[te], s_te)),
+                "prevalence": float(y[te].mean()),
+            })
+            continue
+
         scorer_te = EventScorer(meta_te, seiz_te, min_consecutive)
 
         # out-of-fold scores on the TRAINING patients -> thresholds

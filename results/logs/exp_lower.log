@@ -1,0 +1,4 @@
+loaded 350478 windows (973.5 h), 23 patients, 198 annotated seizures (4s)
+[lower] cases with FT9/FT10: 24
+[lower] windows=339089 (941.9 h) ictal=1261 patients=23 cases=24
+  full_18_bipolar                  n_feat=252 AUPRC=0.163 sens@6FA/h=0.811 FA/h=8.96 (113s)

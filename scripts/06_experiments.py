@@ -92,25 +92,28 @@ def cmd_random(store):
     _describe(store, mask, "random-control")
     chans = MONTAGES["full_18_bipolar"]
     meta = store.meta.loc[mask]
+    Xm = store.X[mask]                      # sliced once, not per pair
     rows = []
     pairs = list(combinations(chans, 2))
-    print(f"evaluating {len(pairs)} channel pairs", flush=True)
+    print(f"evaluating {len(pairs)} channel pairs (threshold-free)", flush=True)
+    t0 = time.time()
     for n, pair in enumerate(pairs, 1):
         cols = [CH_INDEX[c] for c in pair]
-        sub = store.X[mask][:, cols, :].reshape(mask.sum(), -1).astype(np.float64)
+        sub = Xm[:, cols, :].reshape(len(Xm), -1).astype(np.float64)
         sub = normalise_per_file(sub, meta)
-        f, _ = run_montage_cv(store, "pair", mask, feature_matrix=sub,
-                              normalise="perfile", target_fa_per_h=(6.0,),
-                              min_consecutive=2, per_patient=False)
+        f, _ = run_montage_cv(store, "+".join(pair), mask, feature_matrix=sub,
+                              normalise="perfile", target_fa_per_h=(),
+                              per_patient=False)
         rows.append({
             "channels": "+".join(pair),
             "contacts": "+".join(sorted({e for c in pair for e in c.split("-")})),
-            "auprc": f.auprc.mean(), "auroc": f.auroc.mean(),
-            "event_sensitivity": f.event_sensitivity.mean(),
-            "false_alarms_per_hour": f.false_alarms_per_hour.mean(),
+            "auprc": f.auprc.mean(), "auprc_sd": f.auprc.std(),
+            "auroc": f.auroc.mean(),
         })
         if n % 20 == 0:
-            print(f"  {n}/{len(pairs)}", flush=True)
+            rate = (time.time() - t0) / n
+            print(f"  {n}/{len(pairs)}  ({rate:.1f}s/pair, "
+                  f"~{rate*(len(pairs)-n)/60:.0f} min left)", flush=True)
     df = pd.DataFrame(rows).sort_values("auprc", ascending=False)
     df.to_csv(TABLES_DIR / "random_pair_control.csv", index=False)
     print(df.head(12).to_string(index=False), flush=True)

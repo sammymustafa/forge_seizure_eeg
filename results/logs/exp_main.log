@@ -1,2 +1,8 @@
 loaded 350478 windows (973.5 h), 23 patients, 198 annotated seizures (4s)
 [main] windows=350252 (972.9 h) ictal=1337 patients=23 cases=24
+  full_18_bipolar                  n_feat=252 AUPRC=0.137 sens@6FA/h=0.742 FA/h=9.17 (104s)
+  glasses_4_contacts               n_feat= 28 AUPRC=0.090 sens@6FA/h=0.639 FA/h=5.68 (22s)
+  temporal_4_contacts              n_feat= 28 AUPRC=0.130 sens@6FA/h=0.721 FA/h=5.57 (22s)
+  posterior_temporal_4_contacts    n_feat= 28 AUPRC=0.169 sens@6FA/h=0.747 FA/h=5.38 (24s)
+  left_temporal_2_contacts         n_feat= 14 AUPRC=0.171 sens@6FA/h=0.702 FA/h=5.84 (18s)
+  right_temporal_2_contacts        n_feat= 14 AUPRC=0.060 sens@6FA/h=0.689 FA/h=6.12 (18s)
