@@ -33,6 +33,24 @@ placement, motion artefact and amplifier noise. The lower-temporal pair is the
 closest scalp analogue of a behind-the-ear placement, and FT9/FT10 are absent
 from three subjects (chb15, chb18, chb19).
 
+## Results
+
+Full write-up with every number regenerated from the result tables:
+**[RESULTS.md](RESULTS.md)**. In one paragraph:
+
+Across 23 patients, 198 seizures and 973 hours, a **two-channel temporal or
+posterior-temporal set is not measurably worse than the full 18-channel
+montage** — the paired per-patient AUPRC difference has a confidence interval
+straddling zero, and at a matched *achieved* alarm rate the reduced sets are
+slightly ahead. The **glasses-like frontal placement is measurably worse**. The
+single-channel results are asymmetric (left `F7-T7` beats right `F8-T8` in 16 of
+23 patients), so for a one-sided device the side matters; that argues for a
+bilateral four-contact layout. And the spread between patients is far larger
+than the spread between electrode sets, which is the real obstacle for a
+patient-general wearable detector.
+
+![Performance by electrode set](results/figures/fig2_montage_performance.png)
+
 ## Pipeline
 
 ```
