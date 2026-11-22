@@ -2,3 +2,4 @@ loaded 350478 windows (973.5 h), 23 patients, 198 annotated seizures (4s)
 [random-control] windows=350252 (972.9 h) ictal=1337 patients=23 cases=24
 evaluating 153 channel pairs (threshold-free)
   20/153  (6.1s/pair, ~14 min left)
+  40/153  (6.1s/pair, ~11 min left)

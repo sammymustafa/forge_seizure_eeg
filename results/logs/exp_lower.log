@@ -2,3 +2,9 @@ loaded 350478 windows (973.5 h), 23 patients, 198 annotated seizures (4s)
 [lower] cases with FT9/FT10: 24
 [lower] windows=339089 (941.9 h) ictal=1261 patients=23 cases=24
   full_18_bipolar                  n_feat=252 AUPRC=0.163 sens@6FA/h=0.811 FA/h=8.96 (113s)
+  glasses_4_contacts               n_feat= 28 AUPRC=0.093 sens@6FA/h=0.670 FA/h=5.85 (24s)
+  temporal_4_contacts              n_feat= 28 AUPRC=0.156 sens@6FA/h=0.797 FA/h=5.78 (23s)
+  posterior_temporal_4_contacts    n_feat= 28 AUPRC=0.177 sens@6FA/h=0.786 FA/h=5.75 (24s)
+  lower_temporal_4_contacts        n_feat= 28 AUPRC=0.090 sens@6FA/h=0.811 FA/h=5.94 (26s)
+  left_temporal_2_contacts         n_feat= 14 AUPRC=0.173 sens@6FA/h=0.767 FA/h=5.99 (17s)
+  right_temporal_2_contacts        n_feat= 14 AUPRC=0.079 sens@6FA/h=0.755 FA/h=5.68 (18s)
