@@ -1,0 +1,14 @@
+featurising 395 recordings with 4 workers
+  25/395 sub-007_ses-01_task-szMonitoring_run-03: ok
+  50/395 sub-026_ses-01_task-szMonitoring_run-01: ok
+  75/395 sub-034_ses-01_task-szMonitoring_run-07: ok
+  100/395 sub-043_ses-01_task-szMonitoring_run-06: ok
+  125/395 sub-052_ses-01_task-szMonitoring_run-03: ok
+  150/395 sub-063_ses-01_task-szMonitoring_run-04: ok
+  175/395 sub-072_ses-01_task-szMonitoring_run-17: ok
+  200/395 sub-073_ses-01_task-szMonitoring_run-48: ok
+  225/395 sub-079_ses-01_task-szMonitoring_run-09: ok
+  250/395 sub-086_ses-01_task-szMonitoring_run-05: ok
+  275/395 sub-087_ses-01_task-szMonitoring_run-22: ok
+  300/395 sub-094_ses-01_task-szMonitoring_run-08: ok
+  325/395 sub-102_ses-01_task-szMonitoring_run-03: ok

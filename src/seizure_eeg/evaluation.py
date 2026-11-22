@@ -86,15 +86,16 @@ class EventScorer:
             self.total_s += float((sp - st).sum())
 
             seiz = by_file.get(fname)
-            tol, onsets = [], []
+            tol, onsets, ids = [], [], []
             if seiz is not None:
                 for r in seiz.itertuples():
                     tol.append((r.onset_s - PRE_TOL, r.offset_s + POST_TOL))
                     onsets.append(float(r.onset_s))
+                    ids.append(getattr(r, "event_uid", r.Index))
                     self.ictal_s += float(r.offset_s - r.onset_s)
             self.n_events += len(tol)
             self.files.append({"idx": idx, "stop": sp, "tol": tol,
-                               "onsets": onsets})
+                               "onsets": onsets, "ids": ids, "file": fname})
         self.interictal_h = max(self.total_s - self.ictal_s, 1.0) / 3600.0
 
     # ------------------------------------------------------------------
@@ -147,6 +148,46 @@ class EventScorer:
             "median_latency_s": float(np.median(lat)) if lat.size else np.nan,
             "mean_latency_s": float(np.mean(lat)) if lat.size else np.nan,
         }
+
+    # ------------------------------------------------------------------
+    def event_table(self, scores: np.ndarray, threshold: float) -> pd.DataFrame:
+        """One row per annotated seizure: detected or not, and the latency.
+
+        This is what subgroup analyses need — pooled sensitivity hides which
+        seizures were missed, and seizure type / onset lobe are properties of
+        individual events.
+        """
+        scores = np.asarray(scores)
+        above_all = scores >= threshold
+        rows = []
+        for f in self.files:
+            sp, tol = f["stop"], f["tol"]
+            if not tol:
+                continue
+            above = above_all[f["idx"]]
+            hit = [False] * len(tol)
+            lat = [np.nan] * len(tol)
+            starts, stops = _runs(above)
+            for i, j in zip(starts, stops):
+                if (j - i) < self.min_consecutive:
+                    continue
+                raised = float(sp[i + self.min_consecutive - 1])
+                run_end = float(sp[j - 1])
+                t = raised
+                while True:
+                    end = min(t + self.max_alarm_s, run_end)
+                    for k, (w0, w1) in enumerate(tol):
+                        if t <= w1 and end >= w0 and not hit[k]:
+                            hit[k] = True
+                            lat[k] = float(max(t, w0) - f["onsets"][k])
+                    if end >= run_end:
+                        break
+                    t = end
+            for k in range(len(tol)):
+                rows.append({"recording": f["file"], "event_uid": f["ids"][k],
+                             "onset_s": f["onsets"][k], "detected": hit[k],
+                             "latency_s": lat[k], "threshold": threshold})
+        return pd.DataFrame(rows)
 
     # ------------------------------------------------------------------
     def threshold_for_target_fa(self, scores: np.ndarray, target_fa_per_h: float,

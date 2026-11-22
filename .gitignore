@@ -1,6 +1,14 @@
-# Raw recordings are large; re-fetch them with scripts/02_download.py
+# ---------------------------------------------------------------------------
+# Raw recordings and bulk downloads are NEVER committed. Nothing in data/ other
+# than the small CHB-MIT annotation summaries reaches the repository, so a
+# `git pull` brings code, tables and figures only - never gigabytes of EEG.
+# ---------------------------------------------------------------------------
 data/chbmit/**/*.edf
 data/chbmit/**/*.part
+
+# SeizeIT2 BIDS tree (~126 GB in full); derived tables live in results/tables/
+data/seizeit2/
+data/tusz/
 
 # Feature tensors are regenerable (scripts/03_extract_features.py)
 results/features/*.npz
