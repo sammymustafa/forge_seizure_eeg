@@ -84,6 +84,8 @@ Collapsed by physical contact count:
 | 4 | 0.166 | 0.78 |
 | 2 | 0.159 | 0.78 |
 
+For scale, the ictal prevalence is 0.0038, so the full montage's AUPRC of 0.209 is about 55x chance. Absolute AUPRC is low because seizures are rare, not because the detector is uninformative.
+
 Performance does **not** fall monotonically with electrode count. The 19-contact montage reaches AUPRC 0.209, but the best 4-contact and 2-contact sets are within the bootstrap interval of it (§6). With a linear model and patient-disjoint folds, the 252-feature full montage has more parameters to fit than the cross-patient signal supports.
 
 ![Performance by electrode set](results/figures/fig2_montage_performance.png)
@@ -181,13 +183,33 @@ A real device would need an equivalent online calibration (a running baseline) t
 
 ### 6.4 Classifier check
 
-_Gradient-boosting comparison not completed in this run; the shrinkage-LDA results above stand on their own, and whether a non-linear model changes the electrode ranking is still open._
+Is the headline conclusion an artefact of using a linear model? Threshold-free comparison on the same folds and the same windows:
+
+| Configuration | Model | AUPRC | AUROC |
+|---|---|---|---|
+| Full scalp (18 bipolar ch) | Gradient boosting | 0.217 | 0.899 |
+| Full scalp (18 bipolar ch) | Shrinkage LDA | 0.137 | 0.781 |
+| Full scalp (18 bipolar ch) | Logistic regression | 0.09 | 0.704 |
+| Glasses-like (4 contacts, 2 ch) | Gradient boosting | 0.087 | 0.807 |
+| Glasses-like (4 contacts, 2 ch) | Shrinkage LDA | 0.09 | 0.772 |
+| Glasses-like (4 contacts, 2 ch) | Logistic regression | 0.068 | 0.78 |
+| Posterior-temporal (4 contacts, 2 ch) | Gradient boosting | 0.119 | 0.854 |
+| Posterior-temporal (4 contacts, 2 ch) | Shrinkage LDA | 0.169 | 0.798 |
+| Posterior-temporal (4 contacts, 2 ch) | Logistic regression | 0.122 | 0.799 |
+| Temporal (4 contacts, 2 ch) | Gradient boosting | 0.18 | 0.859 |
+| Temporal (4 contacts, 2 ch) | Shrinkage LDA | 0.13 | 0.819 |
+| Temporal (4 contacts, 2 ch) | Logistic regression | 0.138 | 0.803 |
+
+
+Gradient boosting is **not** uniformly better: it beats shrinkage LDA on 2 of 4 configurations (Full scalp (18 bipolar ch), Temporal (4 contacts, 2 ch)) and is worse on the rest. Its largest gain is on the full montage (0.137 → 0.217).
+
+**This tempers §3 and §4.** The margin of the full montage over the best reduced configuration is -0.032 AUPRC under LDA but +0.038 under gradient boosting — the extra channels are worth more to a model able to exploit them, while a two-channel set has little extra for a non-linear model to find. So "not measurably worse than full scalp" is a statement about this linear benchmark, not about wearable EEG in general. Repeating the paired event-level comparison with a non-linear model is the first follow-up this project should run; the numbers here are threshold-free and do not by themselves establish what happens to sensitivity at a fixed alarm budget.
 
 ## 7. Exploratory seizure-type analysis (SeizeIT2)
 
 **This section uses real behind-the-ear wearable EEG, not a scalp proxy.** The public SeizeIT2 release contains no paired full-scalp recording, so nothing here is a full-versus-wearable comparison; it is external validation of what a real two-channel around-ear device achieves, broken down by seizure type.
 
-Patient-disjoint 5-fold CV over 125 held-out patients, 883 annotated seizures, 395 recordings, same pipeline as CHB-MIT. Overall at the ≤6 FA/h target: **506/883 seizures detected (57.3%)**, median latency 23 s, mean AUPRC 0.042 at a prevalence of 0.54 %.
+Patient-disjoint 5-fold CV over 125 held-out patients, 883 annotated seizures, 395 recordings, same pipeline as CHB-MIT. Overall at the ≤6 FA/h target: **506/883 seizures detected (57.3%)**, median latency 23 s, mean AUPRC 0.042 against a chance baseline of 0.0054 (the ictal prevalence), i.e. about 8x chance. AUPRC is small in absolute terms because the positive class is rare; the event-level numbers are the ones to read clinically.
 
 | Seizure type | Seizures | Patients | Detected | Sensitivity | CI low | CI high | Latency (s) |
 |---|---|---|---|---|---|---|---|

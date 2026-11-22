@@ -14,9 +14,23 @@ python scripts/06_experiments.py raw           # ablation: no per-file scaling
 python scripts/06_experiments.py models        # LDA vs gradient boosting
 python scripts/06_experiments.py random        # placement control (~15 min)
 
-python scripts/07_report.py                    # summary tables
+python scripts/07_report.py                    # CHB-MIT tables + RESULTS.md
 python scripts/05_figures.py explore
 python scripts/05_figures.py results
-python scripts/08_build_notebook.py --execute  # results walkthrough notebook
 
-echo "Done. See results/tables and results/figures."
+# --- SeizeIT2: real behind-the-ear wearable, seizure type and onset location
+# Metadata first (~5700 tiny files), then only the seizure-containing
+# recordings (12.5 GB of the 126 GB corpus).
+python scripts/10_seizeit2_fetch.py metadata
+python scripts/11_seizeit2_inventory.py
+python scripts/10_seizeit2_fetch.py eeg --with-seizures
+python scripts/12_seizeit2_features.py --workers 4
+python scripts/13_seizeit2_benchmark.py
+python scripts/14_seizeit2_figures.py
+
+# --- cross-dataset deliverables
+python scripts/16_harmonised_events.py         # one event schema, all datasets
+python scripts/15_research_report.py           # REPORT.md
+python scripts/08_build_notebook.py --execute  # expanded notebook
+
+echo "Done. See REPORT.md, results/tables and results/figures."

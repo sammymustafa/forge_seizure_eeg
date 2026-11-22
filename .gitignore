@@ -10,9 +10,12 @@ data/chbmit/**/*.part
 data/seizeit2/
 data/tusz/
 
-# Feature tensors are regenerable (scripts/03_extract_features.py)
+# Feature tensors are regenerable and large; never commit them.
+# CHB-MIT:  scripts/03_extract_features.py
+# SeizeIT2: scripts/12_seizeit2_features.py
 results/features/*.npz
 results/features/*_meta.csv.gz
+results/features_seizeit2/
 
 __pycache__/
 *.pyc

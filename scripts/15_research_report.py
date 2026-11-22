@@ -265,6 +265,13 @@ def section_electrode_count() -> list[str]:
     ref = s6.set_index("montage").loc[REF]
     lines += [
         "",
+        f"For scale, the ictal prevalence is "
+        f"{folds[folds.target_fa_per_h == 6.0].prevalence.mean():.4f}, so the "
+        f"full montage's AUPRC of {ref.auprc:.3f} is about "
+        f"{ref.auprc / max(folds[folds.target_fa_per_h == 6.0].prevalence.mean(), 1e-9):.0f}x "
+        "chance. Absolute AUPRC is low because seizures are rare, not because "
+        "the detector is uninformative.",
+        "",
         f"Performance does **not** fall monotonically with electrode count. "
         f"The 19-contact montage reaches AUPRC {ref.auprc:.3f}, but the best "
         f"4-contact and 2-contact sets are within the bootstrap interval of it "
@@ -463,23 +470,53 @@ def section_uncertainty() -> list[str]:
             "",
         ]
     if models is not None:
-        g = (models[models.target_fa_per_h == 6.0]
-             .groupby(["montage", "model"])
-             .agg(auprc=("auprc", "mean"),
-                  sensitivity=("event_sensitivity", "mean"),
-                  fa_per_h=("false_alarms_per_hour", "mean")).reset_index())
+        # The classifier check is threshold-free, so it carries no operating
+        # point columns; older runs of it did.
+        if "target_fa_per_h" in models.columns:
+            models = models[models.target_fa_per_h == 6.0]
+        agg = {"auprc": ("auprc", "mean")}
+        if "auroc" in models.columns:
+            agg["auroc"] = ("auroc", "mean")
+        g = (models.groupby(["montage", "model"]).agg(**agg).reset_index())
+        piv = g.pivot_table(index="montage", columns="model", values="auprc")
         lines += [
             "### 6.4 Classifier check",
             "",
-            "Is the conclusion an artefact of using a linear model?",
+            "Is the headline conclusion an artefact of using a linear model? "
+            "Threshold-free comparison on the same folds and the same windows:",
             "",
-            md_table(g, ["montage", "model", "auprc", "sensitivity",
-                         "fa_per_h"],
-                     ["Configuration", "Model", "AUPRC", "Sensitivity",
-                      "FA/h"],
-                     {"auprc": 3, "sensitivity": 2, "fa_per_h": 1}),
+            md_table(g, ["montage", "model", "auprc", "auroc"],
+                     ["Configuration", "Model", "AUPRC", "AUROC"],
+                     {"auprc": 3, "auroc": 3}),
             "",
         ]
+        if REF in piv.index and {"hgb", "lda"} <= set(piv.columns):
+            red = [m for m in piv.index if m != REF]
+            gaps = {mo: float(piv.loc[REF, mo] - piv.loc[red, mo].max())
+                    for mo in ("lda", "hgb")}
+            wins = {mo: [m for m in piv.index if piv.loc[m, "hgb"] > piv.loc[m, "lda"]]
+                    for mo in ("hgb",)}["hgb"]
+            lines.append(
+                f"Gradient boosting is **not** uniformly better: it beats "
+                f"shrinkage LDA on {len(wins)} of {len(piv)} configurations "
+                f"({', '.join(MONTAGE_LABELS.get(m, m) for m in wins) or 'none'})"
+                f" and is worse on the rest. Its largest gain is on the full "
+                f"montage ({piv.loc[REF, 'lda']:.3f} → {piv.loc[REF, 'hgb']:.3f}).")
+            lines.append("")
+            lines.append(
+                f"**This tempers §3 and §4.** The margin of the full montage "
+                f"over the best reduced configuration is {gaps['lda']:+.3f} "
+                f"AUPRC under LDA but {gaps['hgb']:+.3f} under gradient "
+                "boosting — the extra channels are worth more to a model able "
+                "to exploit them, while a two-channel set has little extra for "
+                "a non-linear model to find. So \"not measurably worse than "
+                "full scalp\" is a statement about this linear benchmark, not "
+                "about wearable EEG in general. Repeating the paired "
+                "event-level comparison with a non-linear model is the first "
+                "follow-up this project should run; the numbers here are "
+                "threshold-free and do not by themselves establish what "
+                "happens to sensitivity at a fixed alarm budget.")
+            lines.append("")
     else:
         lines += [
             "### 6.4 Classifier check",
@@ -518,8 +555,11 @@ def section_subtype() -> list[str]:
         f"**{int(e6.detected.sum())}/{len(e6)} seizures detected "
         f"({e6.detected.mean():.1%})**, median latency "
         f"{e6.loc[e6.detected, 'latency_s'].median():.0f} s, "
-        f"mean AUPRC {f6.auprc.mean():.3f} at a prevalence of "
-        f"{100*f6.prevalence.mean():.2f} %.",
+        f"mean AUPRC {f6.auprc.mean():.3f} against a chance baseline of "
+        f"{f6.prevalence.mean():.4f} (the ictal prevalence), i.e. about "
+        f"{f6.auprc.mean()/max(f6.prevalence.mean(), 1e-9):.0f}x chance. "
+        "AUPRC is small in absolute terms because the positive class is rare; "
+        "the event-level numbers are the ones to read clinically.",
         "",
         md_table(sub, ["seizure_type", "n_seizures", "n_patients",
                        "n_detected", "sensitivity", "sensitivity_lo",

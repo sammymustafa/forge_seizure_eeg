@@ -54,21 +54,54 @@ from three subjects (chb15, chb18, chb19).
 
 ## Results
 
-Full write-up with every number regenerated from the result tables:
-**[RESULTS.md](RESULTS.md)**. In one paragraph:
+Full write-up, with every number regenerated from the result tables:
+**[REPORT.md](REPORT.md)** (CHB-MIT-only summary: [RESULTS.md](RESULTS.md)).
+
+### Primary — electrode reduction and placement (CHB-MIT, scalp proxies)
 
 Across 23 patients, 198 seizures and 973 hours, a **two-channel temporal or
 posterior-temporal set is not measurably worse than the full 18-channel
 montage** — the paired per-patient AUPRC difference has a confidence interval
 straddling zero, and at a matched *achieved* alarm rate the reduced sets are
-slightly ahead. The **glasses-like frontal placement is measurably worse**. The
-single-channel results are asymmetric (left `F7-T7` beats right `F8-T8` in 16 of
-23 patients), so for a one-sided device the side matters; that argues for a
-bilateral four-contact layout. And the spread between patients is far larger
-than the spread between electrode sets, which is the real obstacle for a
-patient-general wearable detector.
+slightly ahead. The **glasses-like frontal placement is measurably worse**
+(−0.076 [−0.154, −0.002]). Against all 153 two-channel subsets of the standard
+derivations, posterior-temporal lands at the 88th percentile and glasses-like at
+the 14th: *where* a few contacts go matters as much as how many there are.
+Single-channel results are asymmetric (left `F7-T7` beats right `F8-T8` in 16 of
+23 patients), which argues for a bilateral four-contact layout. The spread
+between patients dwarfs the spread between electrode sets.
 
 ![Performance by electrode set](results/figures/fig2_montage_performance.png)
+
+**One important caveat on that headline.** The comparison is model-dependent.
+Under shrinkage LDA the best two-channel set is *ahead* of the full montage by
+0.032 AUPRC; under gradient boosting the full montage is ahead by 0.038, because
+the extra channels are worth more to a model able to exploit them. "Not
+measurably worse than full scalp" is a statement about this linear benchmark,
+not about wearable EEG in general.
+
+### Secondary — seizure type and anatomical onset (SeizeIT2, real wearable)
+
+On real behind-the-ear hardware (125 patients, 883 focal seizures, 3 062 h), the
+same pipeline detects **506/883 seizures (57 %) at a 6 FA/h target, median
+latency 23 s**. Two exploratory findings:
+
+* **Seizure type matters enormously.** Focal-to-bilateral tonic-clonic seizures
+  are detected at 0.98 versus 0.54 for focal aware seizures — a paired
+  difference of +0.438 [+0.266, +0.641]. The seizures a wearable catches most
+  reliably are the ones least likely to go unnoticed anyway.
+* **Temporal involvement helps, weakly.** Seizures whose annotated onset
+  involves the temporal lobe are detected better than those that do not
+  (+0.17 [+0.01, +0.31] on the cleanest subset: localisation annotated,
+  focal-to-bilateral excluded). Strict temporal-versus-frontal is **not**
+  resolved (+0.11 [−0.10, +0.29]). Sensors were positioned with reference to
+  each patient's suspected onset zone, so anatomy and placement are confounded.
+
+![Detection by subtype](results/figures/fig5_seizeit2_subtype.png)
+
+An interval that includes zero is not evidence of equivalence — with these
+cohort sizes the study cannot resolve differences of the size that would matter
+clinically.
 
 ## Pipeline
 
