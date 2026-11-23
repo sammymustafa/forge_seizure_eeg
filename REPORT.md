@@ -28,6 +28,8 @@ Continuous EEG is the only direct measure of seizure activity, but a clinical mo
 
 A bipolar EEG channel is the difference between two physical contacts, so a four-contact wearable mock-up yields **two** channels, not four.
 
+![Electrode configurations on the scalp](results/figures/fig0_electrode_configurations_scalp.png)
+
 | Configuration | Physical contacts | Bipolar channels | Derivations |
 |---|---:|---:|---|
 | Full scalp (18 bipolar ch) | 19 | 18 | `FP1-F7`, `F7-T7`, `T7-P7`, `P7-O1`, `FP1-F3`, `F3-C3`, `C3-P3`, `P3-O1`, `FP2-F4`, `F4-C4`, `C4-P4`, `P4-O2`, `FP2-F8`, `F8-T8`, `T8-P8`, `P8-O2`, `FZ-CZ`, `CZ-PZ` |
@@ -372,6 +374,7 @@ All CSVs are in `results/tables/`; figures in `results/figures/`. Harmonised eve
 
 | # | File | Content | Dataset |
 |---|---|---|---|
+| 0 | `fig0_electrode_configurations_scalp.png` | where each configuration sits on the scalp | — |
 | 1 | `fig9_performance_vs_electrode_count.png` | performance versus electrode count | CHB-MIT (scalp proxy) |
 | 2 | `fig2_montage_performance.png` | full scalp vs glasses-like vs temporal layouts | CHB-MIT |
 | 3 | `fig4_placement_control.png` | all 153 two-channel subsets as a placement control | CHB-MIT |

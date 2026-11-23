@@ -21,7 +21,10 @@ wearable hardware, never a full-versus-wearable comparison.
 
 A bipolar EEG channel is the difference between two physical contacts, so a
 four-contact wearable mock-up yields **two** channels, not four. Contact count
-and channel count are reported separately.
+and channel count are reported separately throughout. Figure 0 shows where each
+configuration sits on the scalp.
+
+![Electrode configurations on the scalp](results/figures/fig0_electrode_configurations_scalp.png)
 
 ## Methods
 

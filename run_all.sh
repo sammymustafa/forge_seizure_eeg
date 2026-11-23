@@ -15,6 +15,7 @@ python scripts/06_experiments.py models        # LDA vs gradient boosting
 python scripts/06_experiments.py random        # placement control (~15 min)
 
 python scripts/07_report.py                    # CHB-MIT tables + RESULTS.md
+python scripts/17_scalp_map.py                  # Fig 0: scalp layout
 python scripts/05_figures.py explore
 python scripts/05_figures.py results
 

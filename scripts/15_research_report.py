@@ -170,6 +170,9 @@ def section_datasets() -> list[str]:
         "contacts, so a four-contact wearable mock-up yields **two** channels, "
         "not four.",
         "",
+        "![Electrode configurations on the scalp]"
+        "(results/figures/fig0_electrode_configurations_scalp.png)",
+        "",
         "| Configuration | Physical contacts | Bipolar channels | Derivations |",
         "|---|---:|---:|---|",
     ]
@@ -857,6 +860,8 @@ def main() -> None:
         "",
         "| # | File | Content | Dataset |",
         "|---|---|---|---|",
+        "| 0 | `fig0_electrode_configurations_scalp.png` | where each "
+        "configuration sits on the scalp | — |",
         "| 1 | `fig9_performance_vs_electrode_count.png` | performance versus "
         "electrode count | CHB-MIT (scalp proxy) |",
         "| 2 | `fig2_montage_performance.png` | full scalp vs glasses-like vs "
