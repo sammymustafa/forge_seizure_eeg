@@ -26,6 +26,8 @@ configuration sits on the scalp.
 
 ![Electrode configurations on the scalp](results/figures/fig0_electrode_configurations_scalp.png)
 
+***Figure 0.** Electrode configurations compared in this benchmark, on a top-down view of the scalp (nose at top). Filled circles are physical contacts; lines are the bipolar derivations between them. FT9/FT10 lie below the standard 10–20 plane, near the mastoid, and are drawn outside the outline.*
+
 ## Methods
 
 Identical across datasets and across every configuration compared: 0.5–40 Hz
@@ -61,6 +63,14 @@ patients; "detected" pools all 198 seizures.
 | Glasses-like (Fp1-F7, Fp2-F8) | 4 | 2 | 0.133 [0.069–0.211] | 0.73 | 5.7 | 28 s | 118/198 |
 | Right temporal (F8-T8) | 2 | 1 | 0.119 [0.068–0.181] | 0.77 | 5.9 | 27 s | 138/198 |
 
+![Performance versus electrode count](results/figures/fig9_performance_vs_electrode_count.png)
+
+***Figure 1.** Performance against physical electrode count. Each point is one configuration (mean over held-out patients, 95% bootstrap CI); the dashed line joins the mean at each count.*
+
+![Performance by electrode set](results/figures/fig2_montage_performance.png)
+
+***Figure 2.** AUPRC, seizure sensitivity and detection latency by electrode set, patient-disjoint, thresholds fitted on training patients for ≤6 false alarms/h.*
+
 Performance does **not** fall monotonically with electrode count. As a paired
 per-patient difference in AUPRC against the full montage, the glasses-like
 layout (−0.076 [−0.154, −0.002]) and the right-temporal single channel
@@ -70,10 +80,18 @@ left-temporal (−0.011 [−0.069, +0.045]) have intervals that include zero. An
 interval including zero is **not** evidence of equivalence — with 23 patients the
 study cannot resolve differences of the size that would matter clinically.
 
+![Paired performance loss](results/figures/fig10_paired_performance_loss.png)
+
+***Figure 3.** Paired performance loss against the full montage. One dot per held-out patient; diamond and bar are the mean and its 95% patient bootstrap CI; ✱ marks an interval excluding zero.*
+
 The full montage's apparent sensitivity advantage is partly bought with alarms:
 it produced 9.6 FA/h against a 6 FA/h target, versus 5.3–5.9 for the reduced
 sets, because its thresholds transfer less well across patients. Plotted against
 *achieved* alarm rate, the reduced sets are not behind.
+
+![Sensitivity versus achieved false alarms](results/figures/fig3_sensitivity_vs_false_alarms.png)
+
+***Figure 4.** Sensitivity against the alarm rate actually achieved on held-out patients, at target budgets of 1, 6 and 24 false alarms/h.*
 
 Placement matters as much as count. Single-channel results are asymmetric: left
 F7-T7 beats right F8-T8 by +0.079 AUPRC [+0.022, +0.143], favoured in 16 of 23
@@ -93,6 +111,10 @@ identically. Best pair overall: T7-P7 + FZ-CZ (AUPRC 0.213); median 0.127; worst
 spread across placements is comparable to the gap between two channels and the
 full montage.
 
+![Placement control](results/figures/fig4_placement_control.png)
+
+***Figure 5.** All 153 valid two-channel subsets of the standard 18 derivations, scored identically. Vertical lines mark where the wearable-plausible layouts fall.*
+
 ## Seizure type and anatomical onset (SeizeIT2, exploratory)
 
 On real behind-the-ear hardware the same pipeline detected **506/883 seizures
@@ -106,6 +128,10 @@ AUPRC is low because seizures are rare).
 | Focal impaired awareness | 391 | 74 | 0.60 [0.44–0.76] | 22 s |
 | Focal aware | 316 | 34 | 0.54 [0.35–0.72] | 23 s |
 | Focal, awareness unknown | 115 | 26 | 0.36 [0.27–0.51] | 24 s |
+
+![Detection by seizure subtype](results/figures/fig5_seizeit2_subtype.png)
+
+***Figure 6.** Seizure sensitivity and detection latency by subtype on real behind-the-ear wearable EEG. Bars resting on fewer than three patients are faded and marked sparse.*
 
 **Seizure type dominates every other factor measured.** Focal-to-bilateral
 tonic-clonic seizures are detected at 0.98 versus 0.54 for focal aware seizures,
@@ -121,6 +147,10 @@ onset **involves** the temporal lobe are detected better than those that do not:
 cleanest subset (localisation annotated, focal-to-bilateral excluded). Strict
 temporal-versus-frontal is **not** resolved (+0.113 [−0.102, +0.285]).
 
+![Detection by anatomical onset](results/figures/fig6_seizeit2_onset_location.png)
+
+***Figure 7.** Sensitivity by annotated onset lobe and by onset hemisphere. Exploratory: sensors were positioned with reference to each patient's suspected onset zone, so anatomy and placement are confounded.*
+
 Two confounds were removed explicitly rather than left implicit. "Does not
 involve temporal" otherwise pools genuinely non-temporal onsets with seizures
 whose localisation was never annotated — different facts. And
@@ -132,6 +162,10 @@ help (ipsilateral 0.68 versus contralateral 0.75, Δ −0.074 [−0.265, +0.163]
 but the contralateral group is small and the side was chosen clinically, not
 randomised. Vigilance made no measurable difference (asleep 0.55 versus awake
 0.57, Δ −0.021 [−0.145, +0.122]).
+
+![Onset side versus device side](results/figures/fig7_seizeit2_proximity_vigilance.png)
+
+***Figure 8.** Sensitivity by onset hemisphere relative to the side the device was worn, and by vigilance state. The side was chosen clinically, not randomised.*
 
 **Crucially, SeizeIT2's behind-the-ear sensors were positioned with reference to
 each patient's suspected onset zone, so anatomy and electrode placement are
@@ -156,6 +190,10 @@ online calibration; this is a prerequisite, not a detail.
 Between-patient spread dwarfs between-configuration spread: per-patient AUPRC
 ranges from 0.001 to 0.794. A patient-general wearable detector is limited far
 more by cross-patient variability than by electrode count.
+
+![Per-patient spread](results/figures/fig5_per_patient.png)
+
+***Figure 9.** Per-patient AUPRC, patients ordered by full-scalp performance. The grey bar spans the electrode sets for that patient.*
 
 ## Limitations
 
